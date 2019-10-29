@@ -1,8 +1,116 @@
 // C++ code for inserting element in skip list 
+// proff code here =================================
 #include <bits/stdc++.h> 
+#include <stdio.h>
+#include <unistd.h>
+#include <assert.h>
+#include <string.h>
+#include <stdlib.h>
 #include <iostream>
+#include <set>
+#include <vector>
+#include <map>
 #include <utility>
 
+//=========================================================================================================
+
+/*
+ * Wrapper class around std::map to handle slight difference in return value and also
+ * provide an Iterator nested name.
+ */
+
+template <typename K, typename V>
+class test_map : public std::map<K, V> {
+    private:
+        using base_t = std::map<K, V>;
+    public:
+        using Iterator = typename base_t::iterator;
+        std::pair<typename base_t::iterator, bool>insert(const std::pair<const K, V> &p) {
+            return this->base_t::insert(p);
+        }
+};
+
+/*
+ * Person class.
+ */
+
+struct Person {
+    friend bool operator<(const Person &p1, const Person &p2) {
+        return p1.name < p2.name;
+    }
+    friend bool operator==(const Person &p1, const Person &p2) {
+        return p1.name == p2.name;
+    }
+    Person(const char *n) : name(n) {}
+    void print() const {
+        printf("Name: %s\n", name.c_str());
+    }
+    const std::string name;
+    Person &operator=(const Person &) = delete;
+};
+
+void
+print(const std::pair<const Person, int> &p) {
+    p.first.print();
+    printf("    %d\n", p.second);
+}
+
+/*
+ * MyClass class.
+ */
+
+struct MyClass {
+    friend bool operator<(const MyClass &o1, const MyClass &o2) {
+        return o1.num < o2.num;
+    }
+    friend bool operator==(const MyClass &o1, const MyClass &o2) {
+        return o1.num == o2.num;
+    }
+    MyClass(double n) : num(n) {}
+    double num;
+};
+
+void
+print(const std::pair<const int, std::string> &p) {
+    printf("%d, %s; ", p.first, p.second.c_str());
+}
+
+/*
+ * Stress class.
+ */
+
+struct Stress {
+    friend bool operator<(const Stress& o1, const Stress& o2) {
+        return o1.val < o2.val;
+    }
+    friend bool operator==(const Stress& o1, const Stress& o2) {
+        return o1.val == o2.val;
+    }
+    Stress(int _v) : val(_v){}
+    int val;
+};
+// Helper function for stress testing. This orders iterators by what they point to.
+template <template <typename, typename> class MAP_T>
+inline bool
+less(const typename MAP_T<const Stress, double>::Iterator &lhs, const typename MAP_T<const Stress, double>::Iterator &rhs) {
+    return (*lhs).first.val < (*rhs).first.val;
+}
+
+/*
+ * Additional test functions for BST.
+ */
+
+template <template <typename, typename> class MAP_T>
+void traverse(const MAP_T<const Person, int> &, int level);
+
+template <template <typename, typename> class MAP_T>
+void traverse2(int level);
+
+template <template <typename, typename> class MAP_T>
+void check(const MAP_T<const Stress, double> &, const std::map<const Stress, double> &);
+
+
+//========================================= MYIMPLEMENTATION  =============================================
 //using namespace std; 
 
 // Class to implement node 
@@ -15,7 +123,13 @@ public:
   Node **forward;
   Node *previous; 
   Node(std::pair<key_T, val_T>,int);
-  Node(int); 
+  Node(int);
+  bool operator==(const Node<key_T,val_T>& n1){
+    return (this == n1)? true : false;
+  }
+  bool operator!=(const Node<key_T,val_T>& n1){
+    return (this != n1)? true : false;
+  }
   ~Node(){
   delete [] forward;
   //delete value;
@@ -26,7 +140,7 @@ public:
 template <typename key_T, typename val_T>
 Node<key_T, val_T>::Node(std::pair<key_T,val_T> p ,int level) 
 { 
-  this->value=p;
+  this->value = p;
   // Allocate memory to forward 
   forward = new Node<key_T, val_T>*[level+1]; 
   // Fill forward array with 0(NULL) 
@@ -38,7 +152,7 @@ Node<key_T, val_T>::Node(std::pair<key_T,val_T> p ,int level)
 template <typename key_T, typename val_T>
 Node<key_T, val_T>::Node(int level) 
 { 
-   this->value.first=NULL;
+  //this is for making centinal nodes
   // Allocate memory to forward 
   forward = new Node<key_T, val_T>*[level+1]; 
   // Fill forward array with 0(NULL) 
@@ -66,7 +180,7 @@ class Map
   Node<key_T, val_T> *tail;
 
   public:
-  Map();
+  
 //  ~Map(){
 //        Node<key_T, val_T> *tem_header = header;
 //        Node<key_T, val_T> *temp;
@@ -76,12 +190,14 @@ class Map
 //	tem_header = temp;
 //	}
 //  }
-  
+      
+  Map<key_T, val_T>();
   Map<key_T, val_T>(int, float); 
   int randomLevel(); 
   Node<key_T, val_T>* createNode(std::pair <key_T, val_T>, int); 
   
-  //pair<pair<key_T,val_T>&,bool>
+  //
+  typedef std::pair<key_T, val_T> ValueType;
  
    
   //const val_T& at(const key_T); 
@@ -127,12 +243,31 @@ class Map
 	return retrn;
     }
     
-    val_T& operator*() const{
-        return *cur->value.second;
+    ValueType& operator*() const{
+        return cur->value;
     }
-    val_T* operator->() const{
-	return cur->value.second;
-    }					
+    ValueType* operator->() const{
+	return cur->value;
+    }
+    
+    bool operator==(const typename Map<key_T,val_T>::Iterator& itr1){
+    return (this->get_current() == itr1.get_current())? true : false;
+    }
+    bool operator!=(const Iterator& itr1){
+    return (this->get_current() != itr1.get_current())? true : false;
+    }
+    
+    bool operator==(const typename Map<key_T,val_T>::ReverseIterator& itr1){
+    return (this->get_current() == itr1.get_current())? true : false;
+    }
+   
+    
+    bool operator==(const typename Map<key_T,val_T>::ConstIterator& itr1){
+    return (this->get_current() == itr1.get_current())? true : false;
+    }
+//   bool operator!=(const Map<key_T,val_T>::ConstIterator& itr1){
+//    return (this->get_current() != itr1.get_current())? true : false;
+//    }
     
     ~Iterator(){
         // setting cirrent as zero .....cus it is what it is dude..:)
@@ -178,11 +313,30 @@ class Map
     cur = cur->previous;
     return ret;
     }
-    val_T& operator*() const{
-	return *cur->value;
+    ValueType& operator*() const{
+	return cur->value;
     }
-    val_T* operator->() const{
+    ValueType* operator->() const{
     return cur->value;
+    }
+    
+    
+    
+    bool operator==(const typename Map<key_T,val_T>::ConstIterator& itr1){
+    return (this->get_current() == itr1.get_current())? true : false;
+    }
+    bool operator!=(const ConstIterator& itr1){
+    return (this->get_current() != itr1.get_current())? true : false;
+    }
+    bool operator==(const typename Map<key_T,val_T>::Iterator& itr1){
+    return (this->get_current() == itr1.get_current())? true : false;
+    }
+    bool operator!=(const Iterator& itr1){
+    return (this->get_current() != itr1.get_current())? true : false;
+    }
+    
+    bool operator==(const typename Map<key_T,val_T>::ReverseIterator& itr1){
+    return (this->get_current() == itr1.get_current())? true : false;
     }
     
     ~ConstIterator(){
@@ -200,39 +354,57 @@ class Map
     ReverseIterator(Node<key_T, val_T>* node) : cur(node){}
     Node<key_T, val_T>* get_current() const{return cur;}
     
-    ReverseIterator& operator=(const ReverseIterator& itr){
-        cur = itr.get_current();
-	return *this;
+  //defining operators for ReverseIterator
+    ReverseIterator& operator=(const ReverseIterator& ritr){
+            cur = ritr.get_current();
+            return *this;
     }
-    
     ReverseIterator& operator++(){
-	if(cur == NULL) return *this;
-        cur = cur->forward[0];
-	return *this;
+            if(cur == NULL) return *this;
+            cur = cur->previous;
+            return *this;
     }
-
     ReverseIterator operator++(int){
-	 Map<key_T, val_T>::ReverseIterator ret = *this;
-         if(cur == NULL) return ret;
-         cur = cur->forward[0];
-         return ret;
+             Map<key_T, val_T>::ReverseIterator ret = *this;
+            if(cur == NULL) return ret;
+            cur = cur->previous;
+            return ret;
     }
     ReverseIterator& operator--(){
-	if(cur == NULL) return *this;
-	cur = cur->previous;
-	return *this;
+            if(cur == NULL) return *this;
+            cur = cur->forward[0];
+            return *this;
     }
     ReverseIterator operator--(int){
-	Map<key_T, val_T>::ReverseIterator retrn = *this;
-	if(cur == NULL) return *this;
-        cur = cur->previous;
-	return retrn;
+            Map<key_T, val_T>::ReverseIterator ret = *this;
+            if(cur == NULL) return ret;
+            cur = cur->forward[0];
+            return ret;
     }
-    val_T& operator*() const{
+    ValueType& operator*() const{
 	return *cur->value;
     }
-    val_T* operator->() const{
+    ValueType* operator->() const{
     return cur->value;
+    }
+    
+    bool operator==(const typename Map<key_T,val_T>::ReverseIterator& itr1){
+    return (this->get_current() == itr1.get_current())? true : false;
+    }
+    bool operator!=(const ReverseIterator& itr1){
+    return (this->get_current() != itr1.get_current())? true : false;
+    }
+     bool operator==(const typename Map<key_T,val_T>::ConstIterator& itr1){
+    return (this->get_current() == itr1.get_current())? true : false;
+    }
+    bool operator!=(const ConstIterator& itr1){
+    return (this->get_current() != itr1.get_current())? true : false;
+    }
+    bool operator==(const typename Map<key_T,val_T>::Iterator& itr1){
+    return (this->get_current() == itr1.get_current())? true : false;
+    }
+    bool operator!=(const Iterator& itr1){
+    return (this->get_current() != itr1.get_current())? true : false;
     }
     
     ~ReverseIterator(){
@@ -244,11 +416,54 @@ class Map
     
   };
   
+    //
+    //map coparison function
+bool operator==(Map<key_T, val_T>& map1){
+    std::cout<<this->size()<<map1.size()<<"\n";
+    if(this->size() != map1.size()) return false;
+	auto itr1 = this->begin();
+        auto itr2 = map1.begin();
+	while(itr1 != this->end() && itr2 != map1.end()){
+            std::cout<<itr1.get_current()->value.first<<itr2.get_current()->value.first<<"\n";
+            if(*itr1 != *itr2){
+                std::cout<<" i am here in if in map containor\n";
+                return false;
+            }
+            ++itr1;
+            ++itr2;
+            }
+            return true;
+}
+
+bool operator!=(const Map<key_T, val_T>& map1){
+	return !(this == map1);
+}
+
+bool operator<(const Map<key_T, val_T>& map2){
+		size_t size1 = this->size();
+		size_t size2 = map2.size();
+		if(size1 < size2) return true;
+		if(size2 < size1) return false;
+		//same size
+		auto itr1 = this->begin();
+		auto itr2 = map2.begin();
+		while(itr1 != this->end() && itr2 != map2.end()){
+			bool less = ((*itr1) < (*itr2));
+			bool less2 = ((*itr2) < (*itr1));
+			if(less) return true;
+			if(less2) return false;
+			++itr1;
+			++itr2;
+		}
+		//maps are same
+		return false;
+    }
+  
   // iterator functions
   Iterator begin();
   Iterator end();
   ConstIterator begin() const{return ConstIterator(header->forward[0]);}
-  ConstIterator end() const{return Map<key_T, val_T>::ConstIterator(tail->previous);}
+  ConstIterator end() const{return Map<key_T, val_T>::ConstIterator(tail);}
   ReverseIterator rbegin();
   ReverseIterator rend();
   
@@ -282,12 +497,13 @@ class Map
     }
     else{
       std::cout<<"KEY not found"<<std::endl;
-      return ConstIterator(tail->previous);
+      return ConstIterator(tail);
     } 
   };// find ends
-  
-  
-  
+
+
+//iterator comparision functions
+//comparison operators on iterator
 };
 
 template <typename key_T, typename val_T>
@@ -296,8 +512,8 @@ Map<key_T, val_T>::Map()
   this->MAXLVL = 100; 
   this->P = 0.5; 
   level = 0; 
-  key_T k;// null init key in header
-  val_T v;//no init value in header
+  //key_T k;// null init key in header
+  //val_T v;//no init value in header
   //size --added
   slsize=0;
   // create header node  
@@ -306,10 +522,11 @@ Map<key_T, val_T>::Map()
   tail = new Node<key_T, val_T>(MAXLVL);
   
   //tail prev is header
-  //header->forward[0]=tail;
+  header->forward[0]=tail;
   tail->previous = header;
+  
   // header prev = null
-	header->previous = 0; 
+  header->previous = 0; 
   tail->forward[0] =NULL;
 };
 
@@ -332,7 +549,7 @@ Map<key_T, val_T>::Map(int MAXLVL, float P)
   //header->forward[0]=tail;
   tail->previous = header;
   // header prev = null
-	header->previous = 0; 
+  header->previous = 0; 
   tail->forward[0] =NULL;
 };
 
@@ -364,7 +581,7 @@ typename Map<key_T, val_T>::Iterator Map<key_T, val_T>::begin(){
 template <typename key_T, typename val_T>
 typename Map<key_T, val_T>::Iterator Map<key_T, val_T>::end(){
       //return this->header->forward[0]->value;
-      return Map<key_T, val_T>::Iterator(tail->previous);
+      return Map<key_T, val_T>::Iterator(tail);
 }
 
 template <typename key_T, typename val_T>
@@ -376,7 +593,7 @@ typename Map<key_T, val_T>::ReverseIterator Map<key_T, val_T>::rbegin(){
 template <typename key_T, typename val_T>
 typename Map<key_T, val_T>::ReverseIterator Map<key_T, val_T>::rend(){
       //return this->header->forward[0]->value;
-      return Map<key_T, val_T>::ReverseIterator(header->forward[0]);
+      return Map<key_T, val_T>::ReverseIterator(header);
 }
 
 // create random level for node 
@@ -406,8 +623,7 @@ Node<key_T, val_T>* Map<key_T, val_T>::createNode(std::pair <key_T, val_T> p,int
 template <typename key_T, typename val_T>
 std::pair<typename Map<key_T,val_T>::Iterator,bool> Map<key_T, val_T>::insert(std::pair<key_T, val_T> p) 
 {  
-  // key_T key = p.first;
-  // val_T val = p.second;
+  
   // pair<Iterator,bool>
   // make temp uiterator as Iterator temp = Iterator(n<-newly created node); and return the pointer
   Node<key_T, val_T> *current = header; 
@@ -416,39 +632,29 @@ std::pair<typename Map<key_T,val_T>::Iterator,bool> Map<key_T, val_T>::insert(st
   Node<key_T, val_T> *update[MAXLVL+1]; 
   
   memset(update, 0, sizeof(Node<key_T, val_T>*)*(MAXLVL+1)); 
-
-  /* start from highest level of skip list 
-    move the current pointer forward while key 
-    is greater than key of node next to current 
-    Otherwise inserted current in update and 
-    move one level down and continue search 
-  */
-  for (int i = level; i >= 0; i--) 
+  
+  for (int i = level; i >= 1; i--) 
   { 
     while (current->forward[i] != NULL && 
-      current->forward[i]->value.first < p.first) 
-      current = current->forward[i]; 
+      current->forward[i]->value.first < p.first) {
+      current = current->forward[i]; }
+    //fill update 
       update[i] = current; 
   }
 
-  //========JUST EXPERIMENTING ,AYE===========================
-     // while(current->forward[0] != tail && current->forward[0]->value.first < p.first){
-    // 		current = current->forward[0];
-   // 	}//not working ...umm
-  //=================================== 
-
-  /* reached level 0 and forward pointer to 
-  right, which is desired position to 
-  insert key. 
-  */  
-  current = current->forward[0]; 
-
-  /* if current is NULL that means we have reached 
-  to end of the level or current's key is not equal 
-  to key to insert that means we have to insert 
-  node between update[0] and current node */
+  //========JUST EXPERIMENTING ,AYE================================
+      while(current->forward[0] != tail && current->forward[0]->value.first < p.first){
+     		current = current->forward[0];
+    	}
+  //=============================================================== 
   
-  if (current == NULL || current->value.first != p.first) 
+   
+  
+    update[0] = current;
+    Node<key_T, val_T> *n = update[0];
+    n = n->forward[0];
+  current = current->forward[0];
+  if (current == NULL || !(current->value.first == p.first)) 
   { 
     // Generate a random level for node 
     int rlevel = randomLevel(); 
@@ -467,7 +673,8 @@ std::pair<typename Map<key_T,val_T>::Iterator,bool> Map<key_T, val_T>::insert(st
     } 
 
     // create new node with random level generated 
-    Node<key_T, val_T>* n = createNode(p,rlevel); 
+    n=NULL;
+    n = createNode(p,rlevel); 
 
     // insert node by rearranging pointers 
     for(int i=0;i<=rlevel;i++) 
@@ -479,18 +686,17 @@ std::pair<typename Map<key_T,val_T>::Iterator,bool> Map<key_T, val_T>::insert(st
     
     n->previous = update[0];
 
-    std::cout<< n->previous->value.first<<std::endl;
+    //std::cout<< n->previous->value.first<<std::endl;
 		
-        if(n->forward[0] != NULL){
-        //std::cout<<"inif";
+        if(!(n->forward[0] == tail)){
+            std::cout<<"inif";
 	n->forward[0]->previous = n;
 	}
 	else{
-            //std::cout<<"in else";
             tail->previous = n;
 	} 
     
-    std::cout << "Successfully Inserted key " << p.first<< "\n";
+    std::cout << "Successfully Inserted key\n";
     this->slsize++; 
     Iterator retit = Iterator(n);
     return std::make_pair(retit, true);
@@ -503,44 +709,38 @@ std::pair<typename Map<key_T,val_T>::Iterator,bool> Map<key_T, val_T>::insert(st
 }; 
 
 template <typename key_T, typename val_T>
-
-
  void Map<key_T, val_T>::erase(const key_T& key) 
 { 
     Node<key_T, val_T> *current = header; 
     // create update array and initialize it 
     Node<key_T, val_T> *update[MAXLVL+1]; 
     memset(update,0, sizeof(Node<key_T, val_T>*)*(MAXLVL+1)); 
-  
-    /*    start from highest level of skip list 
-        move the current pointer forward while key  
-        is greater than key of node next to current 
-        Otherwise inserted current in update and  
-        move one level down and continue search 
-    */
-    for(int i = level; i >= 0; i--) 
+ 
+    for(int i = level; i >= 1; i--) 
     { 
         while(current->forward[i] != NULL  && 
-              current->forward[i]->value.first < key) 
-            current = current->forward[i]; 
+              current->forward[i]->value.first < key){ 
+            current = current->forward[i]; }
         update[i] = current; 
     } 
-  
-    /* reached level 0 and forward pointer to  
-       right, which is possibly our desired node.*/
-    current = current->forward[0]; 
+    
+    while(current->forward[0] != tail && current->forward[0]->value.first < key){
+	current = current->forward[0];
+    }
+    
+    
+        update[0] = current;
+        Node<key_T, val_T> *n = update[0];
+        n = n->forward[0];
+        current = current->forward[0]; 
   
     // If current node is target node 
     if(current != NULL and current->value.first == key) 
     { 
-        /* start from lowest level and rearrange 
-           pointers just like we do in singly linked list 
-           to remove target node */
+        
         for(int i=0;i<=level;i++) 
         { 
-            /* If at level i, next node is not target  
-               node, break the loop, no need to move  
-              further level */
+            
             if(update[i]->forward[i] != current) 
                 break; 
   
@@ -549,24 +749,23 @@ template <typename key_T, typename val_T>
        // displayList();
         
         //======================================
-         if(current->forward[0] != NULL){
+         if(!(current->forward[0] == tail)){
             current->forward[0]->previous = current->previous;
         }
         else{
             tail->previous = current->previous;
-            //displayList();
-            current->previous->forward[0] = NULL;
-            //displayList();
+            
+            current->previous->forward[0] = tail;
+            
             }
 
         //======================================
   
-        // Remove levels having no elements  
+   
+     // Remove levels having no elements  
         while(level>0 && 
               header->forward[level] == 0) 
             level--; 
-        
-         
          std::cout<<"Successfully deleted key "<<key<<"\n";
          this->slsize--; 
     }else{
@@ -582,23 +781,33 @@ void Map<key_T, val_T>::erase(Iterator it)
     // create update array and initialize it 
     Node<key_T, val_T> *update[MAXLVL+1]; 
     memset(update,0, sizeof(Node<key_T, val_T>*)*(MAXLVL+1)); 
-    
-    for(int i = level; i >= 0; i--) 
+ 
+    for(int i = level; i >= 1; i--) 
     { 
         while(current->forward[i] != NULL  && 
-              current->forward[i]->value.first < key) 
-            current = current->forward[i]; 
+              current->forward[i]->value.first < key){ 
+            current = current->forward[i]; }
         update[i] = current; 
     } 
-  
-    current = current->forward[0]; 
+    
+    while(current->forward[0] != tail && current->forward[0]->value.first < key){
+	current = current->forward[0];
+    }
+    
+    
+        update[0] = current;
+        Node<key_T, val_T> *n = update[0];
+        n = n->forward[0];
+        current = current->forward[0]; 
   
     // If current node is target node 
     if(current != NULL and current->value.first == key) 
     { 
+        
         for(int i=0;i<=level;i++) 
         { 
-                if(update[i]->forward[i] != current) 
+            
+            if(update[i]->forward[i] != current) 
                 break; 
   
             update[i]->forward[i] = current->forward[i]; 
@@ -606,26 +815,27 @@ void Map<key_T, val_T>::erase(Iterator it)
        // displayList();
         
         //======================================
-         if(current->forward[0] != NULL){
+         if(!(current->forward[0] == tail)){
             current->forward[0]->previous = current->previous;
         }
         else{
             tail->previous = current->previous;
-            //displayList();
-            current->previous->forward[0] = NULL;
-            //displayList();
+            
+            current->previous->forward[0] = tail;
+            
             }
 
         //======================================
   
-        // Remove levels having no elements  
+   
+     // Remove levels having no elements  
         while(level>0 && 
               header->forward[level] == 0) 
             level--; 
-        
-         
-         std::cout<<"Successfully deleted key "<<key<<"\n";
+         std::cout<<"Successfully deleted key \n";
          this->slsize--; 
+    }else{
+        throw std::out_of_range("Key Not in Map");
     } 
 };
 
@@ -635,23 +845,13 @@ typename Map<key_T, val_T>::Iterator Map<key_T, val_T>::find(const key_T key)
 { 
     Node<key_T, val_T> *current = header; 
   
-    /*    start from highest level of skip list 
-        move the current pointer forward while key  
-        is greater than key of node next to current 
-        Otherwise inserted current in update and  
-        move one level down and continue search 
-    */
-    
     for(int i = level; i >= 0; i--) 
     { 
         while(current->forward[i] && 
                current->forward[i]->value.first < key) 
             current = current->forward[i]; 
-  
     }   
-    /* reached level 0 and advance pointer to  
-       right, which is possibly our desired node*/
-    current = current->forward[0]; 
+   current = current->forward[0]; 
   
     // If current node have key equal to 
     // search key, we have found our target node 
@@ -661,11 +861,9 @@ typename Map<key_T, val_T>::Iterator Map<key_T, val_T>::find(const key_T key)
     }
     else{
       std::cout<<"KEY not found"<<std::endl;
-      return Iterator(tail->previous);
+      return Iterator(tail);
     } 
 };
-
-
 
 template <typename key_T, typename val_T>
 val_T& Map<key_T, val_T>::at(const key_T& key) 
@@ -718,9 +916,10 @@ void Map<key_T, val_T>::displayList()
   { 
     Node<key_T, val_T> *node = header->forward[i]; 
     std::cout << "Level " << i << ": "; 
-    while (node != NULL) 
+    while (!(node == NULL)) 
     { 
       std::cout << "key" <<node->value.first;
+        //print(node->value);
       node = node->forward[i]; 
     } 
     std::cout << "\n"; 
@@ -735,249 +934,408 @@ std::size_t Map<key_T, val_T>::size() const
   return this->slsize;
 }
 
-struct person{
-  char * name;
+struct myname{
+    friend bool operator<(const myname &p1, const myname &p2) {
+        return p1.name < p2.name;
+    }
+    friend bool operator==(const myname &p1, const myname &p2) {
+        return p1.name == p2.name;
+    }
+    void print() const {
+        printf("Name: %s\n", name.c_str());
+    }
+    //myname(const char *n) : name(n) {}
+    std::string name;
+    //myname &operator=(const myname &) = delete;
+    
 };
+void
+print(const std::pair<myname, int> &p) {
+    p.first.print();
+    printf("    %d\n", p.second);
+}
+
 
 // Driver to test above code 
 int main() 
 { 
   // Seed random number generator 
   srand((unsigned)time(0)); 
-//  // create SkipList object with MAXLVL and P 
-//  Map<int, int>lst(3, 0.5); 
-//  //lst.displayList();
-//  
-//  // Ok lets text everything that is implemented ........RUM RUM ...
-//  lst.insert(std::make_pair(2,22)); 
-//  lst.insert(std::make_pair(3,33)); 
-//  lst.insert(std::make_pair(4,44));
-//  auto k = lst.insert(std::make_pair(5,55));
-//  lst.insert(std::make_pair(6,66));
-//  lst.insert(std::make_pair(7,77));
-//  lst.insert(std::make_pair(8,88));
-//  //lst.displayList();-> list is empty
-//  //SIZE function
-//  std::cout<<"Size is: "<<lst.size()<<std::endl;
-//  
-//  //k should be an iterator and bool pair
-//  auto e =k.first;
-//  std::cout<<"e from k is :"<<e.get_current()->value.second<<std::endl;
-//  e--;// check if k is actually an iterator
-//  std::cout<<"e from k  is :"<<e.get_current()->value.second<<std::endl;
-//  //check if iterator is padded by refrence
-//  e.get_current()->value.second=444;
-//  std::cout<<"e from k  pbr check is :"<<e.get_current()->value.second<<std::endl;
-//  e.get_current()->value.second=44;//lets just change it back.
-// 
-//  // testing at function ->  mapped_T at(key)
-//   std::cout<<"element at key 2 is :"<<lst.at(2)<<std::endl;
-//  // checking the ret value of at is by refrence or not 
-//  lst.at(2)=222;
-//  std::cout<<"element at pbr key 2 is :"<<lst.at(2)<<std::endl;
-//  lst.at(2)=22;
-//  
-//  
-//  //===============================try erasing the value 
-//  lst.erase(5);
-//  lst.displayList();
-//  lst.insert(std::make_pair(5,55));
-//  //lst.displayList();
-//  // lets see the issue// just in case you are thinking JCI -> just checking iterator
-//  auto jci = lst.end();
-//  std::cout<<"JCI:"<<jci.get_current()->value.first<<std::endl;
-//  jci--;
-//  std::cout<<"JCI:"<<jci.get_current()->value.first<<std::endl;
-//  //====================CONST ITERATOR==================
-//  Map<int,int>::ConstIterator ci =lst.begin();  
-//  std::cout<<"CI:"<<ci.get_current()->value.first<<std::endl;
-//  ci++;
-//  std::cout<<"CI:"<<ci.get_current()->value.first<<std::endl;
-//  ci--;
-//  std::cout<<"CI:"<<ci.get_current()->value.first<<std::endl;
-//  //this should fail ----- is happening---need to see ******
-//  ci.get_current()->value.second=222;
-//  std::cout<<"CI: changing second "<<ci.get_current()->value.second<<std::endl;
-//  ci.get_current()->value.second=22;// change back the value
-//  //=================================================================
-//  auto it = lst.begin();
-//  std::cout<<it.get_current()->value.second<<std::endl;
-//  it++;//to second
-//  std::cout<<it.get_current()->value.second<<std::endl;
-//  //==================================================================
-//  
-//  auto rit = lst.rbegin();
-//  rit--;
-//  rit++;
-//  std::cout<<"RIT: "<<rit.get_current()->value.second<<std::endl;
-//  
-//  auto rit1 = lst.rend();
-//  rit1++;
-//  rit1--;
-//  std::cout<<"RIT1: "<<rit1.get_current()->value.second << std::endl;
-//  //=================================================================
-//  auto eit = lst.end();// at 5
-//  std::cout<<"previous node is: "<<eit.get_current()->value.second<<std::endl;
-//  eit--;// at 4
-//  lst.erase(3);
-//  eit--;
-//  std::cout<<"previous node w/t -- is: "<<eit.get_current()->value.second<<std::endl;
-//  
-//  // ideally it and rit should point to same object
-//  std::cout<<((it.get_current()->value.first==rit.get_current()->value.first) ? true:false)<<std::endl;
-//  std::cout<<"size is:"<<lst.size()<<"is empty->"<<lst.empty()<<std::endl;
+  
+  
+  //============================PROFF CODE=======================================
+        
+        myname p1={"Jane"};
+        myname p2={"John"};
+        myname p3={"Mary"};
+        myname p4={"Dave"};
+
+        Map<myname, int> map;
+
+        // Insert people into the map.
+        auto p1_it = map.insert(std::make_pair(p1, 1));
+        map.insert(std::make_pair(p2, 2));
+        map.insert(std::make_pair(p3, 3));
+        map.insert(std::make_pair(p4, 4));
+
+        // Check iterator equality.
+        {
+            // Returns an iterator pointing to the first element.
+            auto it1 = map.begin();
+            // Returns an iterator pointing to one PAST the last element.  This
+            // iterator is obviously conceptual only.  It cannot be
+            // dereferenced.
+            auto it2 = map.end();
+
+            it1++; // Second node now.
+            it1++; // Third node now.
+            it2--; // Fourth node now.
+            it2--; // Third node now.
+            assert(it1 == it2);
+            it2--; // Second node now.
+            it2--; // First node now.
+            assert(map.begin() == it2);
+        }
+         // Check insert return value.
+        {
+            printf("---- Test insert() return.\n");
+            // Insert returns an interator.  If it's already in, it returns an
+            // iterator to the already inserted element.
+            auto it = map.insert(std::make_pair(p1, 1));
+            assert(it.first == p1_it.first);
+            // Now insert one that is new.
+            myname p5={"Larry"};
+            it = map.insert(std::make_pair(p5, 5));
+            print(*(it.first));
+            map.erase(it.first);
+        }
+        
+        // Print the whole thing now, to verify ordering.
+        printf("---- Before erasures.\n");
+
+        // Iterate through the whole map, and call print() on each Person.
+        for (auto &e : map) {
+            print(e);
+        }
 //
-//  //  lst.erase(2);
-//  //  lst.erase(3);
-//  //  lst.erase(4);
-//  //  lst.erase(5);
-//  //  cout<<"size is:"<<lst.size()<<"is empty->"<<lst.empty()<<endl;
-//  // ==== Handel other types later...haha.. wait, are you serious or sirius. 
+//        // Test multiple traversals of the same map.
+//        printf("---- Multiple traversals\n");
+//        traverse(map, 4);
+//
+//        // Test multiple BST at the same time.
+//        printf("---- Multiple BST\n");
+//        traverse2<MAP_T>(4);
+
+        /*
+         * Test some erasures.
+         */
+
+        // Erase first element.
+        map.erase(map.begin());
+        auto it = map.end();
+        --it; // it now points to last element.
+        it--; // it now points to penultimate element.
+        map.erase(it);
+
+        printf("---- After erasures.\n");
+
+        // Iterate through the whole map, and call print() on each Person.
+        for (auto &e : map) {
+            print(e);
+        }
+
+        // Test iterator validity.
+        {
+            // Iterators must be valid even when other things are inserted or
+            // erased.
+            printf("---- Test iterator non-invalidation\n");
+
+            // Get iterator to the first.
+            auto b = map.begin();
+
+            // Insert element which will be at the end.
+            myname p6 ={"Zeke"};
+            auto it = map.insert(std::make_pair(p6, 10));
+
+            // Iterator to the first should still be valid.
+            print(*b);
+
+            // Delete first, saving the actual object.
+            auto tmp(*b); // Save, so we can reinsert.
+            map.erase(map.begin()); // Erase it.
+
+            // Check iterator for inserted.  Iterator to end should still be valid.
+            print(*it.first); // This should still be valid.
+
+            // Reinsert first element.
+            map.insert(tmp);
+
+            // Erase inserted last element.
+            map.erase(it.first);
+        }
+        
+        
+        
+        
+
+  
+  
+  //================================================================================
+  
+  
+//  //=================================check mapn < ==================================================
+//        Map<int,int>m1;
+//        Map<int,int>m2;
 //  
-//  std::cout<<"lets test it on other types"<<std::endl;
+//        for(int i=1; i<5;i++){
+//            m1.insert({i,i*i*i});
+//            m2.insert({i,i*i*i});
+//        }
+//        //maps are equal
+//        if(m1<m2){
+//            std::cout<<"m1<m2";
+//        }else{
+//            std::cout<<"false";
+//        }
+//        m1.insert({5,125});
+//        m2.insert({5,1000});
+//        if(m1<m2){
+//            std::cout<<"m2<m1";
+//        }else{
+//            std::cout<<"false";
+//        }
+  
+//==============================================HAPPINESS BEGINS=======================================
+//  //inserting 10 elements
+//  Map<int, int> mp;
+//  mp.insert(std::make_pair(2,4)); 
+//  mp.insert(std::make_pair(3,9)); 
+//  mp.insert(std::make_pair(4,16));
+//  mp.insert(std::make_pair(5,25));
+//  mp.insert(std::make_pair(6,36));
+//  mp.insert(std::make_pair(7,49));
+//  mp.insert(std::make_pair(8,64));
+//  mp.insert(std::make_pair(9,81));
+//  mp.insert(std::make_pair(10,100));
 //  
-//  Map<int, person> mp(3, 0.5);
-//  person p1;
-//  p1.name="yash";
-//  mp.insert(std::make_pair(1, p1));
+//  
+//
+//  
+//  mp.erase(3);
+//  mp.displayList();
+//  mp.insert(std::make_pair(3,9));
+//  mp.displayList();
+//  //================ Checking size ===================================
+//  std::cout<<"Size is:"<<mp.size()<<std::endl;
+//// 
+////  //======================= is EMPTY ======WORKING =============
+//  std::cout<<"is empty: "<<mp.empty()<<std::endl;// shoud give 0 as its false
+//  for(int i=2; i<11; i++){
+//      std::cout<<i;
+//      mp.erase(i);
+//  }
+//  std::cout<<"is empty: "<<mp.empty()<<std::endl;// shoud give 1 as its true
+//  // mp.displayList();// should be fine
+//  for(int i=2; i<11; i++){
+//      mp.insert(std::make_pair(i,i*i));
+//  }
+//  mp.displayList();// should be filled...
+//  
+////  //==============ITERATOR begin() and end()====================================
+//  // iterator by refrence so can change the mapped type
+//  auto b = mp.begin();
+//  std::cout<<"begin itr : "<<b.get_current()->value.second<<std::endl;// 4
+//  b++;//3
+//  b++;//4
+//  b++;//5
+//  std::cout<<"beiin itr : "<<b.get_current()->value.second<<std::endl;// give 25
+//  
+//  auto l = mp.end();
+//  std::cout<<"end ite : "<<l.get_current()->value.second<<std::endl;// should be 0
+//  l--;//10
+//  l--;//9
+//  l--;//8
+//  std::cout<<"end ite : "<<l.get_current()->value.second<<std::endl;// should give 64
+//  
+//// //============== ConstIterator begin and end ===========================================
+////  
+//  Map<int,int>::ConstIterator cb = mp.begin();
+//  std::cout<<"const cb : "<<cb.get_current()->value.second<<std::endl;//a t 2 op 4
+//  cb++;//3
+//  cb++;//4
+//  cb--;//3
+//  std::cout<<"const cb : "<<cb.get_current()->value.second<<std::endl;//9
+//  
+//  //should not br able to change value
+//  cb.get_current()->value.second=27;// but it did
+//  //change it back
+//  cb.get_current()->value.second=9;
+//  
+//  Map<int,int>::ConstIterator rce = mp.end(); 
+//  std::cout<<"const rcb : "<<rce.get_current()->value.second<<std::endl;//a t 0 op 0
+//  rce--;//10
+//  std::cout<<"const rcb : "<<rce.get_current()->value.second<<std::endl;//a t 0 op 0
+//  rce--;//9
+//  rce++;//10
+//  std::cout<<"const rcb : "<<rce.get_current()->value.second<<std::endl;// should be 100
+//  //should not br able to change value
+//  rce.get_current()->value.second=10*10*10;// but it did
+//  //change it back
+//  rce.get_current()->value.second=100;
+//  
+////  //========================== ReverseIterator ======================================
+//  mp.displayList();
+//  Map<int,int>::ReverseIterator rit = mp.rbegin();
+//  std::cout<<" rit : "<<rit.get_current()->value.second<<std::endl;//should be 100
+//  rit++;//9
+//  rit++;//8
+//  rit--;//9
+//  std::cout<<" rit : "<<rit.get_current()->value.second<<std::endl;// give 81
+//  
+//  Map<int,int>::ReverseIterator rite = mp.rend();
+//  std::cout<<" rite : "<<rite.get_current()->value.second<<std::endl;//should 0 op  0
+//  rite--;//2
+//  rite--;//3
+//  rite++;//2
+//  std::cout<<" rite : "<<rite.get_current()->value.second<<std::endl;// give 4
+//  
+////  //=========================== find(const key_T) =======================================
+//  auto fin = mp.find(5);
+//  std::cout<<"find():"<<fin.get_current()->value.second<<std::endl;
+//  
+//  // if it indeed is an iterator
+//  fin++;
+//  std::cout<<"find():"<<fin.get_current()->value.second<<std::endl;// should give 36
+//  
+//  // see if key not found then return end of iterator
+//  auto fintes = mp.find(16);
+//  std::cout<<"find() tes:"<<fintes.get_current()->value.second<<std::endl;// should give 100
+//  
+////  // ======================== find (const key_t) const ===================================
+//  auto constfind = mp.find(6);
+//  std::cout<<" const itr find() :"<<constfind.get_current()->value.second<<std::endl;//36
+//  
+//  constfind++;
+//  std::cout<<" const itr find() :"<<constfind.get_current()->value.second<<std::endl;//49
+//  constfind.get_current()->value.second=7*7*7;// shoudnt do
+//  constfind.get_current()->value.second=49;
+//  
+//  //====================== at() both function ===============================  
+//  auto at1 = mp.at(4);
+//  auto atc = mp.at(5);
+//  std::cout<<"at1:"<<at1<<std::endl;
+//  at1 = 64;
+//  std::cout<<"at1:"<<at1<<std::endl;
+//  at1 = 16;
+//  std::cout<<"at1:"<<at1<<std::endl;
+//  
+//  // shoudnt happen
+//  std::cout<<"atc:"<<atc<<std::endl;
+//  atc=125;
+//  std::cout<<"atc:"<<atc<<std::endl;
+//  atc=25;
+//  std::cout<<"atc:"<<atc<<std::endl;
+//  
+////  //=============================erase both()=====================================
+//  mp.insert(std::make_pair(11,121));
+//  mp.insert(std::make_pair(12,144));
+//  mp.erase(11);
+//  mp.displayList();
+//  auto eraseit = mp.end();
+//  eraseit--;
+//  mp.erase(eraseit);
+//  mp.displayList();
+//  //mp.erase(12); working!!
+//  std::cout<<"erase it"<<eraseit.get_current()->value.second<<std::endl;
+//  
+////  //====================Clear function ..easy=*************Not working
+////  //mp.clear();
+//// 
+////  //======================Not Working ================================
+////  
+////  //====================== iterators ========================
+//  auto cmpitr1=mp.begin();//2
+//  auto cmpitr2 = mp.begin();//2
+//  auto cmpitr3 = mp.end();//0
+//  cmpitr3--;//10
+//  
+//  auto constcmpitr1= mp.begin();//2
+//  auto constcmpitr2 = mp.begin();//2
+//  auto constcmpitr3 = mp.end();//0
+//  constcmpitr3--;//10
+//  
+//  auto revcmpitr1=mp.rbegin();//10
+//  auto revcmpitr2 = mp.rbegin();//10
+//  auto revcmpitr3 = mp.rend();//0
+//  revcmpitr3--;//2
+//  //itr ==itr
+//  if(cmpitr1==cmpitr2){
+//      std::cout<<"yes1\n";
+//  }
+//  //itr!=itr
+//  if(cmpitr1!=cmpitr3){
+//      std::cout<<"yes2\n";
+//  }
+//  //itr=constitr
+//  if(cmpitr1==constcmpitr2){
+//      std::cout<<"yes3\n";
+//  }
+//  // itr!=constitr
+//  if(cmpitr1!=constcmpitr3){
+//      std::cout<<"yes4\n";
+//  }
+//  //const itr
+//  if(constcmpitr1==constcmpitr2){
+//      std::cout<<"yes5\n";
+//  }
+//  if(constcmpitr1!=constcmpitr3){
+//      std::cout<<"yes6\n";
+//  }
+//  
+//  //reverse iterator
+//  if(revcmpitr1==revcmpitr2){
+//      std::cout<<"yes7\n";
+//  }
+//  if(revcmpitr1!=revcmpitr3){
+//      std::cout<<"yes8\n";
+//  }
+//  
+////  //=======================MAp compare ===========================================
+//  Map<int,int> mymap1;
+//  Map<int,int> mymap2;
+//  
+//  for(int i=1; i<11; i++){
+//      mymap1.insert(std::make_pair(i,i*i));
+//      mymap2.insert(std::make_pair(i,i*i));
+//  }
+//  
+//  //mymap2.insert(std::make_pair(11,121));
+//  
+//  auto jc1=mymap1.begin();
+//  auto jc2 = mymap2.begin();
+//  jc2++;
+//  if(jc1.get_current()->value<jc2.get_current()->value){
+//      std::cout<<"seems to work";
+//  }
+//  
+//  if(mymap2==mymap1){
+//      std::cout<<"MAps are equal\n";
+//  }else{
+//      std::cout<<"Maps not equal";
+//  }
+//  
+//  // ===========================ITERATE THROUGH MAP=============================
+//  for(auto i = mp.begin(); i!=mp.end();i++){
+//      std::cout<<i.get_current()->value.first<<"\n";
+//  }
+//  for(auto &e:mp){
+//      std::cout<<e.first;
+//  }
+//  ///======================================END OF HAPPINESS=======================================================
   
-  // STANDARD MAP CONTAINER
   
-  //=============== MAP ctor and INSERT working ======================
   
-  //inserting 10 elements
-  Map<int, int> mp;
-  mp.insert(std::make_pair(2,4)); 
-  mp.insert(std::make_pair(3,9)); 
-  mp.insert(std::make_pair(4,16));
-  mp.insert(std::make_pair(5,25));
-  mp.insert(std::make_pair(6,36));
-  mp.insert(std::make_pair(7,49));
-  mp.insert(std::make_pair(8,64));
-  mp.insert(std::make_pair(9,81));
-  mp.insert(std::make_pair(10,100));
- 
-  //================ Checking size ===================================
-  std::cout<<"Size is:"<<mp.size()<<std::endl;
- 
-  //======================= is EMPTY ======WORKING =============
-  std::cout<<"is empty: "<<mp.empty()<<std::endl;// shoud give 0 as its false
-  for(int i=2; i<11; i++){
-      mp.erase(i);
-  }
-  std::cout<<"is empty: "<<mp.empty()<<std::endl;// shoud give 1 as its true
-  // mp.displayList();// should be fine
-  for(int i=2; i<11; i++){
-      mp.insert(std::make_pair(i,i*i));
-  }
-  //mp.displayList();// should be filled...
   
-  //==============ITERATOR begin() and end()====================================
-  // iterator by refrence so can change the mapped type
-  auto b = mp.begin();
-  std::cout<<"begin itr : "<<b.get_current()->value.second<<std::endl;// 4
-  b++;//3
-  b++;//4
-  b++;//5
-  std::cout<<"beiin itr : "<<b.get_current()->value.second<<std::endl;// give 25
-  
-  auto l = mp.end();
-  std::cout<<"end ite : "<<l.get_current()->value.second<<std::endl;// should be 100
-  l--;//9
-  l--;//8
-  l--;//7
-  std::cout<<"end ite : "<<l.get_current()->value.second<<std::endl;// should give 49
-  
- //============== ConstIterator begin and end ===========================================
-  
-  Map<int,int>::ConstIterator cb = mp.begin();
-  std::cout<<"const cb : "<<cb.get_current()->value.second<<std::endl;//a t 2 op 4
-  cb++;//3
-  cb++;//4
-  cb--;//3
-  std::cout<<"const cb : "<<cb.get_current()->value.second<<std::endl;
-  
-  //should not br able to change value
-  cb.get_current()->value.second=27;// but it did
-  //change it back
-  cb.get_current()->value.second=9;
-  
-  Map<int,int>::ConstIterator rce = mp.end(); 
-  std::cout<<"const rcb : "<<rce.get_current()->value.second<<std::endl;//a t 10 op 100
-  rce--;//9
-  rce--;//8
-  rce++;//9
-  std::cout<<"const rcb : "<<rce.get_current()->value.second<<std::endl;// should be 81
-  //should not br able to change value
-  rce.get_current()->value.second=9*9*9;// but it did
-  //change it back
-  rce.get_current()->value.second=81;
-  
-  //========================== ReverseIterator ======================================
-  Map<int,int>::ReverseIterator rit = mp.rbegin();
-  std::cout<<" rit : "<<rit.get_current()->value.second<<std::endl;//should be 100
-  rit--;//9
-  rit--;//8
-  rit++;//9
-  std::cout<<" rit : "<<rit.get_current()->value.second<<std::endl;// give 81
-  
-  Map<int,int>::ReverseIterator rite = mp.rend();
-  std::cout<<" rite : "<<rite.get_current()->value.second<<std::endl;//should 2 op  4
-  rite++;//3
-  rite++;//4
-  rite--;//3
-  std::cout<<" rite : "<<rite.get_current()->value.second<<std::endl;// give 9
-  
-  //=========================== find(const key_T) =======================================
-  auto fin = mp.find(5);
-  std::cout<<"find():"<<fin.get_current()->value.second<<std::endl;
-  
-  // if it indeed is an iterator
-  fin++;
-  std::cout<<"find():"<<fin.get_current()->value.second<<std::endl;// should give 36
-  
-  // see if key not found then return end of iterator
-  auto fintes = mp.find(16);
-  std::cout<<"find() tes:"<<fintes.get_current()->value.second<<std::endl;// should give 100
-  
-  // ======================== find (const key_t) const ===================================
-  auto constfind = mp.find(6);
-  std::cout<<" const itr find() :"<<constfind.get_current()->value.second<<std::endl;
-  
-  constfind++;
-  std::cout<<" const itr find() :"<<constfind.get_current()->value.second<<std::endl;
-  constfind.get_current()->value.second=7*7*7;// shoudnt do
-  constfind.get_current()->value.second=49;
-  
-  //====================== at() both function ===============================
-  
-  auto at1 = mp.at(4);
-  auto atc = mp.at(5);
-  std::cout<<"at1:"<<at1<<std::endl;
-  at1 = 64;
-  std::cout<<"at1:"<<at1<<std::endl;
-  at1 = 16;
-  std::cout<<"at1:"<<at1<<std::endl;
-  
-  // shoudnt happen
-  std::cout<<"atc:"<<atc<<std::endl;
-  atc=125;
-  std::cout<<"atc:"<<atc<<std::endl;
-  atc=25;
-  std::cout<<"atc:"<<atc<<std::endl;
-  //=============================erase both()=====================================
-  mp.insert(std::make_pair(11,121));
-  mp.insert(std::make_pair(12,144));
-  mp.erase(11);
-  mp.displayList();
-  auto eraseit = mp.end();
-  mp.erase(eraseit);
-  mp.displayList();
-  //mp.erase(12); working!!
-  std::cout<<"erase it"<<eraseit.get_current()->value.second<<std::endl;
-  
-  //====================Clear function ..easy======
-  mp.clear();
-  mp.displayList();
-} 
+   
+}
  
