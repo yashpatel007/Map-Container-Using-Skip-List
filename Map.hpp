@@ -44,7 +44,7 @@ Node<key_T, val_T>::Node(const ValueType& p ,int level)
   memset(forward, 0, sizeof(Node<key_T, val_T>*)*(level+1));
   //pointer to previous node
   previous = 0; 
-}; 
+}
 
 template <typename key_T, typename val_T>
 Node<key_T, val_T>::Node(int level) 
@@ -57,7 +57,7 @@ Node<key_T, val_T>::Node(int level)
   //pointer to previous node  
   this->value = NULL;
   previous = NULL; 
-}; 
+} 
 
 // Class for Skip list 
 template <typename key_T, typename val_T>
@@ -120,15 +120,15 @@ class Map
   Map(std::initializer_list<std::pair<const key_T, val_T>>);
   
   // map destructor
-//  ~Map(){
-//        Node<key_T, val_T> *tem_header = header;
-//        Node<key_T, val_T> *temp;
-//	while(tem_header != NULL){
-//	temp = tem_header->forward[0];
-//	delete tem_header;
-//	tem_header = temp;
-//	}
-//  }  
+ ~Map(){
+    // Node<key_T, val_T> *tem_header = header;
+    // Node<key_T, val_T> *temp;
+    // while(tem_header != NULL){
+    // temp = tem_header->forward[0];
+    // delete tem_header;
+    // tem_header = temp;
+    // }
+ }  
   
   
   
@@ -156,11 +156,11 @@ class Map
     
     Iterator& operator=(const Iterator& itr){
         cur = itr.get_current();
-	return *this;
+  return *this;
     }
     
     Iterator& operator++(){
-	if(cur == NULL) {
+  if(cur == NULL) {
               return *this;
             }
             cur = cur->forward[0];
@@ -168,28 +168,28 @@ class Map
     }
 
     Iterator operator++(int){
-	Map<key_T, val_T>::Iterator ret = *this;
-	if(cur == NULL) return *this;
+  Map<key_T, val_T>::Iterator ret = *this;
+  if(cur == NULL) return *this;
         cur = cur->forward[0];
-	return ret;
+  return ret;
     }
     Iterator& operator--(){
-	if(cur == NULL) return *this;
-	cur = cur->previous;
-	return *this;
+  if(cur == NULL) return *this;
+  cur = cur->previous;
+  return *this;
     }
     Iterator operator--(int){
-	Map<key_T, val_T>::Iterator retrn = *this;
-	if(cur == NULL) return *this;
+  Map<key_T, val_T>::Iterator retrn = *this;
+  if(cur == NULL) return *this;
         cur = cur->previous;
-	return retrn;
+  return retrn;
     }
     
     ValueType& operator*() const{
         return *cur->value;
     }
     ValueType* operator->() const{
-	return cur->value;
+  return cur->value;
     }
     
     bool operator==(const typename Map<key_T,val_T>::Iterator& itr1){
@@ -256,7 +256,7 @@ class Map
     return ret;
     }
     ValueType& operator*() const{
-	return *cur->value;
+  return *cur->value;
     }
     ValueType* operator->() const{
     return cur->value;
@@ -324,7 +324,7 @@ class Map
             return ret;
     }
     ValueType& operator*() const{
-	return *cur->value;
+  return *cur->value;
     }
     ValueType* operator->() const{
     return cur->value;
@@ -363,9 +363,9 @@ class Map
 bool operator==(Map<key_T, val_T>& map1){
     std::cout<<this->size()<<map1.size()<<"\n";
     if(this->size() != map1.size()) return false;
-	auto itr1 = this->begin();
+  auto itr1 = this->begin();
         auto itr2 = map1.begin();
-	while(itr1 != this->end() && itr2 != map1.end()){
+  while(itr1 != this->end() && itr2 != map1.end()){
             std::cout<<itr1.get_current()->value->first<<itr2.get_current()->value->first<<"\n";
             if(*itr1 != *itr2){
                 std::cout<<" i am here in if in map containor\n";
@@ -378,27 +378,27 @@ bool operator==(Map<key_T, val_T>& map1){
 }
 
 bool operator!=(const Map<key_T, val_T>& map1){
-	return !(this == map1);
+  return !(this == map1);
 }
 
 bool operator<(const Map<key_T, val_T>& map2){
-		size_t size1 = this->size();
-		size_t size2 = map2.size();
-		if(size1 < size2) return true;
-		if(size2 < size1) return false;
-		//same size
-		auto itr1 = this->begin();
-		auto itr2 = map2.begin();
-		while(itr1 != this->end() && itr2 != map2.end()){
-			bool less = ((*itr1) < (*itr2));
-			bool less2 = ((*itr2) < (*itr1));
-			if(less) return true;
-			if(less2) return false;
-			++itr1;
-			++itr2;
-		}
-		//maps are same
-		return false;
+    size_t size1 = this->size();
+    size_t size2 = map2.size();
+    if(size1 < size2) return true;
+    if(size2 < size1) return false;
+    //same size
+    auto itr1 = this->begin();
+    auto itr2 = map2.begin();
+    while(itr1 != this->end() && itr2 != map2.end()){
+      bool less = ((*itr1) < (*itr2));
+      bool less2 = ((*itr2) < (*itr1));
+      if(less) return true;
+      if(less2) return false;
+      ++itr1;
+      ++itr2;
+    }
+    //maps are same
+    return false;
     }
 
 val_T &operator[](const key_T & key){
@@ -410,7 +410,7 @@ val_T &operator[](const key_T & key){
     return temp->value->second;
 };
   
-Map &operator=(const Map<key_T,val_T> & map){;	
+Map &operator=(const Map<key_T,val_T> & map){;  
     if(this == &map){
         return *this;
     }
@@ -418,9 +418,8 @@ Map &operator=(const Map<key_T,val_T> & map){;
     Node<key_T, val_T> *temp;
     while(ret!= NULL){
         temp = ret->forward[0];
-	  //delete ret;=======================
-	  ret = NULL;
-	  ret = temp;
+    ret = NULL;
+    ret = temp;
   }
 //=====================================CTOR==========================
     this->MAXLVL = 100; 
@@ -444,12 +443,12 @@ Map &operator=(const Map<key_T,val_T> & map){;
   tail->forward[0] =NULL;
   //===============================================================
     Node<key_T, val_T> *first = map.get_header()->forward[0];
-		if(first == map.get_tail()) return *this;
-		while(first != map.get_tail()){
-			insert(*(first->value));
-			first = first->forward[0];
-		}
-		return *this;
+    if(first == map.get_tail()) return *this;
+    while(first != map.get_tail()){
+      insert(*(first->value));
+      first = first->forward[0];
+    }
+    return *this;
 }
   // iterator functions
   Iterator begin();
@@ -481,7 +480,7 @@ Map &operator=(const Map<key_T,val_T> & map){;
   ConstIterator find(const key_T& key) const{
     Node<key_T, val_T> *temp = lookupkey(key);
     if(temp == NULL){
-	return Map<key_T, val_T>::ConstIterator(tail);
+  return Map<key_T, val_T>::ConstIterator(tail);
     }
     return Map<key_T, val_T>::ConstIterator(temp);
   };// find ends
@@ -497,8 +496,8 @@ Map &operator=(const Map<key_T,val_T> & map){;
     }   
     
     while(current->forward[0] != tail && current->forward[0]->value->first < key){
-			current = current->forward[0];
-		}
+      current = current->forward[0];
+    }
     
     
    current = current->forward[0]; 
@@ -543,7 +542,7 @@ Map<key_T, val_T>::Map()
   // header prev = null
   header->previous = NULL; 
   tail->forward[0] =NULL;
-};
+}
 
 template <typename key_T, typename val_T>
 Map<key_T, val_T>::Map(int MAXLVL, float P) 
@@ -566,7 +565,7 @@ Map<key_T, val_T>::Map(int MAXLVL, float P)
   // header prev = null
   header->previous = NULL; 
   tail->forward[0] =NULL;
-};
+}
 
 template <typename key_T, typename val_T>
 void Map<key_T, val_T>::clear(){
@@ -575,16 +574,16 @@ void Map<key_T, val_T>::clear(){
       if(temp != NULL){std::cout<<"yes";}
       while(temp != NULL){
         temp = temp_head->forward[0];
-	std::cout<<temp_head->value->first<<std::endl;
+  std::cout<<temp_head->value->first<<std::endl;
         delete temp_head;
         std::cout<<"deleted"<<std::endl;
         temp_head = temp;
-	}
-		slsize=0;
-		header=NULL;
+  }
+    slsize=0;
+    header=NULL;
                 tail = NULL;
                 Map();
-		
+    
 }
 
 template <typename key_T, typename val_T>
@@ -623,7 +622,7 @@ int Map<key_T, val_T>::randomLevel()
     r = (float)rand()/RAND_MAX; 
   } 
   return lvl; 
-}; 
+}
 
 // create new node 
 //template <typename key_T, typename val_T>
@@ -660,7 +659,7 @@ std::pair<typename Map<key_T,val_T>::Iterator,bool> Map<key_T, val_T>::insert(co
   //========JUST EXPERIMENTING ,AYE================================
       while(current->forward[0] != tail && current->forward[0]->value->first < key){
           
-     		current = current->forward[0];
+        current = current->forward[0];
         }
   //=============================================================== 
   
@@ -706,14 +705,14 @@ std::pair<typename Map<key_T,val_T>::Iterator,bool> Map<key_T, val_T>::insert(co
     n->previous = update[0];
 
     //std::cout<< n->previous->value.first<<std::endl;
-		
+    
         if(!(n->forward[0] == tail)){
             std::cout<<"inif";
-	n->forward[0]->previous = n;
-	}
-	else{
+  n->forward[0]->previous = n;
+  }
+  else{
             tail->previous = n;
-	} 
+  } 
     
     std::cout << "Successfully Inserted key\n";
     this->slsize++; 
@@ -721,16 +720,16 @@ std::pair<typename Map<key_T,val_T>::Iterator,bool> Map<key_T, val_T>::insert(co
     return std::make_pair(retit, true);
     } 
 
-}; 
+} 
 
 template <typename key_T, typename val_T>
 template <typename IT_T>
 void Map<key_T, val_T>::insert(IT_T range_beg, IT_T range_end){
-		auto itr = range_beg;
-		while(itr != range_end){
-			insert(*itr);
-			++itr;
-		}
+    auto itr = range_beg;
+    while(itr != range_end){
+      insert(*itr);
+      ++itr;
+    }
 }
 
 template<typename key_T, typename val_T>
@@ -756,7 +755,7 @@ Map<key_T,val_T>::Map(std::initializer_list<std::pair<const key_T, val_T>> l){
   header->previous = NULL; 
   tail->forward[0] =NULL;
       for(auto i=l.begin(); i!=l.end();i++){
-	    insert(*i);
+      insert(*i);
       }
 }
 
@@ -778,7 +777,7 @@ template <typename key_T, typename val_T>
     } 
     
     while(current->forward[0] != tail && current->forward[0]->value->first < key){    
-	current = current->forward[0];
+  current = current->forward[0];
     }
     
     
@@ -811,7 +810,6 @@ template <typename key_T, typename val_T>
             n->previous->forward[0] = tail;
             
             }
-        //delete n;
         //======================================
   
    
@@ -820,13 +818,13 @@ template <typename key_T, typename val_T>
               header->forward[level] == NULL) 
             level--; 
          std::cout<<"Successfully deleted key\n";
-         //delete[] update;
+         delete[] update;//*********************************************
          slsize--;
          
     }else{
         throw std::out_of_range("Key Not in Map");
     } 
-}; 
+}
   
 template <typename key_T, typename val_T>
 void Map<key_T, val_T>::erase(Iterator it) 
@@ -846,7 +844,7 @@ void Map<key_T, val_T>::erase(Iterator it)
     } 
     
     while(current->forward[0] != tail && current->forward[0]->value->first < key){    
-	current = current->forward[0];
+  current = current->forward[0];
     }
     
     
@@ -879,7 +877,7 @@ void Map<key_T, val_T>::erase(Iterator it)
             n->previous->forward[0] = tail;
             
             }
-        //delete n;
+        //delete n;//****************************************************SF
         //======================================
   
    
@@ -888,14 +886,13 @@ void Map<key_T, val_T>::erase(Iterator it)
               header->forward[level] == NULL) 
             level--; 
          std::cout<<"Successfully deleted key\n";
-         //delete[] update;
+         delete[] update;
          slsize--;
          
     }else{
         throw std::out_of_range("Key Not in Map");
     } 
-};
-
+}
 
 // Search for element in skip list 
 template <typename key_T, typename val_T>
@@ -906,7 +903,7 @@ typename Map<key_T, val_T>::Iterator Map<key_T, val_T>::find(const key_T& key)
             return Map<key_T, val_T>::Iterator(tail);
     }
     return Map<key_T, val_T>::Iterator(temp);   
-};
+}
 
 template <typename key_T, typename val_T>
 val_T& Map<key_T, val_T>::at(const key_T& key) 
@@ -916,7 +913,7 @@ val_T& Map<key_T, val_T>::at(const key_T& key)
             throw std::out_of_range("out of range");
     }
     else return temp_head->value->second; 
-};
+}
 
 template <typename key_T, typename val_T>
 const val_T& Map<key_T, val_T>::at(const key_T& key) const
@@ -926,7 +923,7 @@ const val_T& Map<key_T, val_T>::at(const key_T& key) const
             throw std::out_of_range("out of range");
     }
     else return temp_head->value->second;  
-};
+}
 
 // Display skip list level wise 
 template <typename key_T, typename val_T>
@@ -939,7 +936,7 @@ void Map<key_T, val_T>::displayList()
   std::cout<<"\n";
   std::cout<<"********************\n";
   
-}; 
+}
 
 template <typename key_T, typename val_T>
 std::size_t Map<key_T, val_T>::size() const
