@@ -508,7 +508,7 @@ Map &operator=(const Map<key_T,val_T> & map){;
    if(current==tail){ return NULL;}
     if(current !=NULL){
         if( current->value->first == key){
-            std::cout<<"Found key: "<<key<<"\n";
+            //std::cout<<"Found key: "<<key<<"\n";
             return current;
         }
     }
