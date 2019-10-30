@@ -118,29 +118,31 @@ template <typename key_T, typename val_T>
 class Node
 { 
 public:   
-  std::pair<key_T, val_T> value ;
+    //friend class Map<key_T,val_T>;
+    typedef std::pair<const key_T, val_T> ValueType; 
+    ValueType *value ;
   // Array to hold pointers to node of different level 
   Node **forward;
   Node *previous; 
-  Node(std::pair<key_T, val_T>,int);
+  Node(const ValueType&,int);
   Node(int);
-  bool operator==(const Node<key_T,val_T>& n1){
-    return (this == n1)? true : false;
-  }
-  bool operator!=(const Node<key_T,val_T>& n1){
-    return (this != n1)? true : false;
-  }
+//  bool operator==(const Node<key_T,val_T>& n1){
+//    return (this == n1)? true : false;
+//  }
+//  bool operator!=(const Node<key_T,val_T>& n1){
+//    return (this != n1)? true : false;
+//  }
   ~Node(){
   delete [] forward;
-  //delete value;
+  delete value;
   delete previous;
   }
   
 }; 
 template <typename key_T, typename val_T>
-Node<key_T, val_T>::Node(std::pair<key_T,val_T> p ,int level) 
+Node<key_T, val_T>::Node(const ValueType& p ,int level) 
 { 
-  this->value = p;
+  this->value = new std::pair<const key_T,val_T>(p);
   // Allocate memory to forward 
   forward = new Node<key_T, val_T>*[level+1]; 
   // Fill forward array with 0(NULL) 
@@ -157,8 +159,9 @@ Node<key_T, val_T>::Node(int level)
   forward = new Node<key_T, val_T>*[level+1]; 
   // Fill forward array with 0(NULL) 
   memset(forward, 0, sizeof(Node<key_T, val_T>*)*(level+1));
-  //pointer to previous node
-  previous = 0; 
+  //pointer to previous node  
+  this->value = NULL;
+  previous = NULL; 
 }; 
 
 // Class for Skip list 
@@ -180,7 +183,11 @@ class Map
   Node<key_T, val_T> *tail;
 
   public:
-  
+      Node<key_T, val_T>* get_header() const{
+          return header;
+      }
+      Node<key_T, val_T>* get_tail() const {
+      return tail;}
 //  ~Map(){
 //        Node<key_T, val_T> *tem_header = header;
 //        Node<key_T, val_T> *temp;
@@ -194,17 +201,20 @@ class Map
   Map<key_T, val_T>();
   Map<key_T, val_T>(int, float); 
   int randomLevel(); 
-  Node<key_T, val_T>* createNode(std::pair <key_T, val_T>, int); 
+  //Node<key_T, val_T>* createNode(const std::pair <key_T, val_T>, int); 
   
   //
-  typedef std::pair<key_T, val_T> ValueType;
+  typedef std::pair<const key_T, val_T> ValueType;
  
    
   //const val_T& at(const key_T); 
   void displayList();
+  
   std::size_t size() const ;
   bool empty() const{return slsize==0;}
   //template <typename key_T, typename val_T>
+  class ConstIterator;
+  class ReverseIterator;
   class Iterator{
     public:
     //watch your steps <-> constructor overloading happens here
@@ -244,7 +254,7 @@ class Map
     }
     
     ValueType& operator*() const{
-        return cur->value;
+        return *cur->value;
     }
     ValueType* operator->() const{
 	return cur->value;
@@ -314,7 +324,7 @@ class Map
     return ret;
     }
     ValueType& operator*() const{
-	return cur->value;
+	return *cur->value;
     }
     ValueType* operator->() const{
     return cur->value;
@@ -424,7 +434,7 @@ bool operator==(Map<key_T, val_T>& map1){
 	auto itr1 = this->begin();
         auto itr2 = map1.begin();
 	while(itr1 != this->end() && itr2 != map1.end()){
-            std::cout<<itr1.get_current()->value.first<<itr2.get_current()->value.first<<"\n";
+            std::cout<<itr1.get_current()->value->first<<itr2.get_current()->value->first<<"\n";
             if(*itr1 != *itr2){
                 std::cout<<" i am here in if in map containor\n";
                 return false;
@@ -466,9 +476,12 @@ bool operator<(const Map<key_T, val_T>& map2){
   ConstIterator end() const{return Map<key_T, val_T>::ConstIterator(tail);}
   ReverseIterator rbegin();
   ReverseIterator rend();
+
+//
+  
   
   //map function for element access 
-  std::pair<Iterator,bool> insert(const std::pair<key_T, val_T>);
+  std::pair<Iterator,bool> insert(const ValueType&);
   
   //at function
   val_T& at(const key_T&);
@@ -481,30 +494,49 @@ bool operator<(const Map<key_T, val_T>& map2){
   //clear
   void clear();
    //find
-  Iterator find(const key_T);
-  ConstIterator find(const key_T key) const{
-  Node<key_T, val_T> *current = header;   
-    for(int i = level; i >= 0; i--) 
-    { 
-        while(current->forward[i] && 
-            current->forward[i]->value.first < key) 
-            current = current->forward[i];
-    }   
-    current = current->forward[0]; 
-    if(current and current->value.first == key){  
-        std::cout<<"Found key: "<<key<<"\n";
-        return ConstIterator(current);
+  Iterator find(const key_T&);
+  ConstIterator find(const key_T& key) const{
+    Node<key_T, val_T> *temp = lookupkey(key);
+    if(temp == NULL){
+	return Map<key_T, val_T>::ConstIterator(tail);
     }
-    else{
-      std::cout<<"KEY not found"<<std::endl;
-      return ConstIterator(tail);
-    } 
+    return Map<key_T, val_T>::ConstIterator(temp);
   };// find ends
 
+  Node<key_T, val_T>* lookupkey(const key_T& key) const{
+      Node<key_T, val_T> *current = header; 
+  
+    for(int i = level; i >= 1; i--) 
+    { 
+        while(current->forward[i] !=NULL && 
+               current->forward[i]->value->first < key) 
+            current = current->forward[i]; 
+    }   
+    
+    while(current->forward[0] != tail && current->forward[0]->value->first < key){
+			current = current->forward[0];
+		}
+    
+    
+   current = current->forward[0]; 
+  
+    // If current node have key equal to 
+    // search key, we have found our target node
+   if(current==tail){ return NULL;}
+    if(current !=NULL){
+        if( current->value->first == key){
+            std::cout<<"Found key: "<<key<<"\n";
+            return current;
+        }
+    }
+    return NULL;
+  };
 
 //iterator comparision functions
 //comparison operators on iterator
 };
+
+
 
 template <typename key_T, typename val_T>
 Map<key_T, val_T>::Map() 
@@ -526,7 +558,7 @@ Map<key_T, val_T>::Map()
   tail->previous = header;
   
   // header prev = null
-  header->previous = 0; 
+  header->previous = NULL; 
   tail->forward[0] =NULL;
 };
 
@@ -611,41 +643,42 @@ int Map<key_T, val_T>::randomLevel()
 }; 
 
 // create new node 
-template <typename key_T, typename val_T>
-Node<key_T, val_T>* Map<key_T, val_T>::createNode(std::pair <key_T, val_T> p,int level) 
-{ 
-  //cout<<"node created with"<<p.first<<"and lev:"<<level<<endl;
-  Node<key_T, val_T> *n = new Node<key_T, val_T>(p,level); 
-  return n; 
-}; 
+//template <typename key_T, typename val_T>
+//Node<key_T, val_T>* Map<key_T, val_T>::createNode(const std::pair <key_T, val_T> p,int level) 
+//{ 
+//  //cout<<"node created with"<<p.first<<"and lev:"<<level<<endl;
+//  Node<key_T, val_T> *n = new Node<key_T, val_T>(p,level); 
+//  return n; 
+//}; 
 
 // Insert given key in skip list 
 template <typename key_T, typename val_T>
-std::pair<typename Map<key_T,val_T>::Iterator,bool> Map<key_T, val_T>::insert(const std::pair<key_T, val_T> p) 
-{  
+std::pair<typename Map<key_T,val_T>::Iterator,bool> Map<key_T, val_T>::insert(const std::pair<const key_T, val_T>& p) 
+{ 
+    const key_T& key=p.first;
   
   // pair<Iterator,bool>
   // make temp uiterator as Iterator temp = Iterator(n<-newly created node); and return the pointer
   Node<key_T, val_T> *current = header; 
 
   // create update array and initialize it 
-  Node<key_T, val_T> *update[MAXLVL+1]; 
-  
-  memset(update, 0, sizeof(Node<key_T, val_T>*)*(MAXLVL+1)); 
+    Node<key_T, val_T> **update = new Node<key_T, val_T>* [MAXLVL+1];
+    memset(update, '\0', sizeof(Node<key_T, val_T>*)*(MAXLVL+1)); 
   
   for (int i = level; i >= 1; i--) 
-  { 
+  {
     while (current->forward[i] != NULL && 
-      current->forward[i]->value.first < p.first) {
+      current->forward[i]->value->first < key) {
       current = current->forward[i]; }
     //fill update 
       update[i] = current; 
   }
 
   //========JUST EXPERIMENTING ,AYE================================
-      while(current->forward[0] != tail && current->forward[0]->value.first < p.first){
+      while(current->forward[0] != tail && current->forward[0]->value->first < key){
+          
      		current = current->forward[0];
-    	}
+        }
   //=============================================================== 
   
    
@@ -653,9 +686,12 @@ std::pair<typename Map<key_T,val_T>::Iterator,bool> Map<key_T, val_T>::insert(co
     update[0] = current;
     Node<key_T, val_T> *n = update[0];
     n = n->forward[0];
-  current = current->forward[0];
-  if (current == NULL || !(current->value.first == p.first)) 
-  { 
+    //current = current->forward[0];
+    if(n->value != NULL && (n->value->first == p.first)){
+    Map<key_T,val_T>::Iterator retit = Iterator(n);
+    std::cout<<"key already there"<<std::endl;
+    return std::make_pair(retit, false);
+    }else{ 
     // Generate a random level for node 
     int rlevel = randomLevel(); 
 
@@ -674,7 +710,7 @@ std::pair<typename Map<key_T,val_T>::Iterator,bool> Map<key_T, val_T>::insert(co
 
     // create new node with random level generated 
     n=NULL;
-    n = createNode(p,rlevel); 
+    n = new Node<key_T, val_T>(p,rlevel);; 
 
     // insert node by rearranging pointers 
     for(int i=0;i<=rlevel;i++) 
@@ -700,10 +736,6 @@ std::pair<typename Map<key_T,val_T>::Iterator,bool> Map<key_T, val_T>::insert(co
     this->slsize++; 
     Iterator retit = Iterator(n);
     return std::make_pair(retit, true);
-    }else{
-    Iterator retit = Iterator(current);
-    std::cout<<"key already there"<<std::endl;
-    return std::make_pair(retit, false);
     } 
 
 }; 
@@ -713,18 +745,18 @@ template <typename key_T, typename val_T>
 { 
     Node<key_T, val_T> *current = header; 
     // create update array and initialize it 
-    Node<key_T, val_T> *update[MAXLVL+1]; 
-    memset(update,0, sizeof(Node<key_T, val_T>*)*(MAXLVL+1)); 
+    Node<key_T, val_T> **update = new Node<key_T, val_T>* [MAXLVL+1];
+    memset(update, '\0', sizeof(Node<key_T, val_T>*)*(MAXLVL+1));
  
     for(int i = level; i >= 1; i--) 
     { 
         while(current->forward[i] != NULL  && 
-              current->forward[i]->value.first < key){ 
+              current->forward[i]->value->first < key){ 
             current = current->forward[i]; }
         update[i] = current; 
     } 
     
-    while(current->forward[0] != tail && current->forward[0]->value.first < key){
+    while(current->forward[0] != tail && current->forward[0]->value->first < key){    
 	current = current->forward[0];
     }
     
@@ -732,42 +764,44 @@ template <typename key_T, typename val_T>
         update[0] = current;
         Node<key_T, val_T> *n = update[0];
         n = n->forward[0];
-        current = current->forward[0]; 
+        //current = current->forward[0]; 
   
     // If current node is target node 
-    if(current != NULL and current->value.first == key) 
+    if(n->value->first == key) 
     { 
         
         for(int i=0;i<=level;i++) 
         { 
             
-            if(update[i]->forward[i] != current) 
+            if(update[i]->forward[i] != n) 
                 break; 
   
-            update[i]->forward[i] = current->forward[i]; 
+            update[i]->forward[i] = n->forward[i]; 
         } 
        // displayList();
         
         //======================================
-         if(!(current->forward[0] == tail)){
-            current->forward[0]->previous = current->previous;
+         if(!(n->forward[0] == tail)){
+            n->forward[0]->previous = n->previous;
         }
         else{
-            tail->previous = current->previous;
+            tail->previous = n->previous;
             
-            current->previous->forward[0] = tail;
+            n->previous->forward[0] = tail;
             
             }
-
+        //delete n;
         //======================================
   
    
      // Remove levels having no elements  
         while(level>0 && 
-              header->forward[level] == 0) 
+              header->forward[level] == NULL) 
             level--; 
-         std::cout<<"Successfully deleted key "<<key<<"\n";
-         this->slsize--; 
+         std::cout<<"Successfully deleted key\n";
+         //delete[] update;
+         slsize--;
+         
     }else{
         throw std::out_of_range("Key Not in Map");
     } 
@@ -776,21 +810,21 @@ template <typename key_T, typename val_T>
 template <typename key_T, typename val_T>
 void Map<key_T, val_T>::erase(Iterator it) 
 { 
-    key_T key = it.get_current()->value.first;
+    key_T& key = it.get_current()->value->first;
     Node<key_T, val_T> *current = header; 
     // create update array and initialize it 
-    Node<key_T, val_T> *update[MAXLVL+1]; 
-    memset(update,0, sizeof(Node<key_T, val_T>*)*(MAXLVL+1)); 
+    Node<key_T, val_T> **update = new Node<key_T, val_T>* [MAXLVL+1];
+    memset(update, '\0', sizeof(Node<key_T, val_T>*)*(MAXLVL+1));
  
     for(int i = level; i >= 1; i--) 
     { 
         while(current->forward[i] != NULL  && 
-              current->forward[i]->value.first < key){ 
+              current->forward[i]->value->first < key){ 
             current = current->forward[i]; }
         update[i] = current; 
     } 
     
-    while(current->forward[0] != tail && current->forward[0]->value.first < key){
+    while(current->forward[0] != tail && current->forward[0]->value->first < key){    
 	current = current->forward[0];
     }
     
@@ -798,71 +832,61 @@ void Map<key_T, val_T>::erase(Iterator it)
         update[0] = current;
         Node<key_T, val_T> *n = update[0];
         n = n->forward[0];
-        current = current->forward[0]; 
+        //current = current->forward[0]; 
   
     // If current node is target node 
-    if(current != NULL and current->value.first == key) 
+    if(n->value->first == key) 
     { 
         
         for(int i=0;i<=level;i++) 
         { 
             
-            if(update[i]->forward[i] != current) 
+            if(update[i]->forward[i] != n) 
                 break; 
   
-            update[i]->forward[i] = current->forward[i]; 
+            update[i]->forward[i] = n->forward[i]; 
         } 
        // displayList();
         
         //======================================
-         if(!(current->forward[0] == tail)){
-            current->forward[0]->previous = current->previous;
+         if(!(n->forward[0] == tail)){
+            n->forward[0]->previous = n->previous;
         }
         else{
-            tail->previous = current->previous;
+            tail->previous = n->previous;
             
-            current->previous->forward[0] = tail;
+            n->previous->forward[0] = tail;
             
             }
-
+        //delete n;
         //======================================
   
    
      // Remove levels having no elements  
         while(level>0 && 
-              header->forward[level] == 0) 
+              header->forward[level] == NULL) 
             level--; 
-         std::cout<<"Successfully deleted key \n";
-         this->slsize--; 
+         std::cout<<"Successfully deleted key\n";
+         //delete[] update;
+         slsize--;
+         
     }else{
         throw std::out_of_range("Key Not in Map");
     } 
 };
 
+
+
+
 // Search for element in skip list 
 template <typename key_T, typename val_T>
-typename Map<key_T, val_T>::Iterator Map<key_T, val_T>::find(const key_T key)
+typename Map<key_T, val_T>::Iterator Map<key_T, val_T>::find(const key_T& key)
 { 
-    Node<key_T, val_T> *current = header; 
-  
-    for(int i = level; i >= 0; i--) 
-    { 
-        while(current->forward[i] && 
-               current->forward[i]->value.first < key) 
-            current = current->forward[i]; 
-    }   
-   current = current->forward[0]; 
-  
-    // If current node have key equal to 
-    // search key, we have found our target node 
-    if(current and current->value.first == key){  
-        std::cout<<"Found key: "<<key<<"\n";
-        return Iterator(current);
+  Node<key_T, val_T> *temp = Map<key_T,val_T>::lookupkey(key);
+    if(temp == NULL){
+            return Map<key_T, val_T>::Iterator(tail);
     }
-    else{
-      std::cout<<"KEY not found"<<std::endl;
-      return Iterator(tail);
-    } 
+    return Map<key_T, val_T>::Iterator(temp);   
 };
 
 template <typename key_T, typename val_T>
@@ -872,13 +896,13 @@ val_T& Map<key_T, val_T>::at(const key_T& key)
     for(int i = level; i >= 0; i--) 
     { 
         while(current->forward[i] && 
-        current->forward[i]->value.first < key) 
+        current->forward[i]->value->first < key) 
         current = current->forward[i]; 
     } 
     current = current->forward[0];
-    if(current and current->value.first == key){
+    if(current and current->value->first == key){
       std::cout<<"Key found: ";  
-    return current->value.second;
+    return current->value->second;
     }
     else{
       std::cout<<"KEY not found"<<std::endl;
@@ -911,20 +935,13 @@ const val_T& Map<key_T, val_T>::at(const key_T& key) const
 template <typename key_T, typename val_T>
 void Map<key_T, val_T>::displayList() 
 { 
-  std::cout<<"\n*****Skip List*****"<<"\n"; 
-  for (int i=0;i<=level;i++) 
-  { 
-    Node<key_T, val_T> *node = header->forward[i]; 
-    std::cout << "Level " << i << ": "; 
-    while (!(node == NULL)) 
-    { 
-      std::cout << "key" <<node->value.first;
-        //print(node->value);
-      node = node->forward[i]; 
-    } 
-    std::cout << "\n"; 
-  }
-  std::cout<<"********************"<<std::endl;
+  std::cout<<"\n*****List*****"<<"\n";
+  for(auto i=this->begin();i!=this->end();i++){
+      std::cout<<i.get_current()->value->first<<"  ";
+  };
+  std::cout<<"\n";
+  std::cout<<"********************\n";
+  
 }; 
 
 template <typename key_T, typename val_T>
@@ -952,7 +969,7 @@ struct myname{
 void
 print(const std::pair<myname, int> &p) {
     p.first.print();
-    printf("    %d\n", p.second);
+    printf("%d\n", p.second);
 }
 
 
@@ -964,294 +981,165 @@ int main()
   
   
   //============================PROFF CODE=======================================
-//        
-//        myname p1={"Jane"};
-//        myname p2={"John"};
-//        myname p3={"Mary"};
-//        myname p4={"Dave"};
-//
-//        Map<myname, int> map;
-//
-//        // Insert people into the map.
-//        auto p1_it = map.insert(std::make_pair(p1, 1));
-//        map.insert(std::make_pair(p2, 2));
-//        map.insert(std::make_pair(p3, 3));
-//        map.insert(std::make_pair(p4, 4));
-//
-//        // Check iterator equality.
-//        {
-//            // Returns an iterator pointing to the first element.
-//            auto it1 = map.begin();
-//            // Returns an iterator pointing to one PAST the last element.  This
-//            // iterator is obviously conceptual only.  It cannot be
-//            // dereferenced.
-//            auto it2 = map.end();
-//
-//            it1++; // Second node now.
-//            it1++; // Third node now.
-//            it2--; // Fourth node now.
-//            it2--; // Third node now.
-//            assert(it1 == it2);
-//            it2--; // Second node now.
-//            it2--; // First node now.
-//            assert(map.begin() == it2);
-//        }
-//         // Check insert return value.
-//        {
-//            printf("---- Test insert() return.\n");
-//            // Insert returns an interator.  If it's already in, it returns an
-//            // iterator to the already inserted element.
-//            auto it = map.insert(std::make_pair(p1, 1));
-//            assert(it.first == p1_it.first);
-//            // Now insert one that is new.
-//            myname p5={"Larry"};
-//            it = map.insert(std::make_pair(p5, 5));
-//            print(*(it.first));
-//            map.erase(it.first);
-//        }
-//        
-//        // Print the whole thing now, to verify ordering.
-//        printf("---- Before erasures.\n");
-//
-//        // Iterate through the whole map, and call print() on each Person.
-//        for (auto &e : map) {
-//            print(e);
-//        }
-//
-//        // Test multiple traversals of the same map.
-//        //printf("---- Multiple traversals\n");
-//        //traverse(map, 4);
-//
-////        // Test multiple BST at the same time.
-////        printf("---- Multiple BST\n");
-////        traverse2<MAP_T>(4);
-//
-//        /*
-//         * Test some erasures.
-//         */
-//
-//        // Erase first element.
-//        map.erase(map.begin());
-//        auto it = map.end();
-//        --it; // it now points to last element.
-//        it--; // it now points to penultimate element.
-//        map.erase(it);
-//
-//        printf("---- After erasures.\n");
-//
-//        // Iterate through the whole map, and call print() on each Person.
-//        for (auto &e : map) {
-//            print(e);
-//        }
-//
-//        // Test iterator validity.
-//        {
-//            // Iterators must be valid even when other things are inserted or
-//            // erased.
-//            printf("---- Test iterator non-invalidation\n");
-//
-//            // Get iterator to the first.
-//            auto b = map.begin();
-//
-//            // Insert element which will be at the end.
-//            myname p6 ={"Zeke"};
-//            auto it = map.insert(std::make_pair(p6, 10));
-//
-//            // Iterator to the first should still be valid.
-//            print(*b);
-//
-//            // Delete first, saving the actual object.
-//            auto tmp(*b); // Save, so we can reinsert.
-//            map.erase(map.begin()); // Erase it.
-//
-//            // Check iterator for inserted.  Iterator to end should still be valid.
-//            print(*it.first); // This should still be valid.
-//
-//            // Reinsert first element.
-//            map.insert(tmp);
-//
-//            // Erase inserted last element.
-//            map.erase(it.first);
-//        }
-//        
-//        
-//         /*
-//     * Test Map with MyClass.
-//     */
-//
-//    {
-//        Map<MyClass, std::string> map;
-//
-//        // Empty container, should print nothing.
-//        for (auto it = map.begin(); it != map.end(); ++it) {
-//            abort();
-//        }
-//
-//        MyClass m1, m2, m3, m4;
-//        m1={4};
-//        m2={3};
-//        m3={1};
-//        m4={2};
-//        auto m1_it = map.insert(std::make_pair(m1, "mmm1"));
-//        map.insert(std::make_pair(m2, "mmm2"));
-//        map.insert(std::make_pair(m3, "mmm3"));
-//        map.insert(std::make_pair(m4, "mmm4"));
-//
-//        // Should print 0.0 1.0 2.0 3.0
-//        for (auto &e : map) {
-//            printf("%3.1f ", e.first.num);
-//        }
-//        printf("\n");
-//    
-//    
-//    }
-//        
-//        
-//        
-//
-//  
-//  
+        Person p1("Jane");
+        Person p2("John");
+        Person p3("Mary");
+        Person p4("Dave");
+
+        Map<const Person, int> map;
+
+        // Insert people into the map.
+        auto p1_it = map.insert(std::make_pair(p1, 1));
+        map.insert(std::make_pair(p2, 2));
+        map.insert(std::make_pair(p3, 3));
+        map.insert(std::make_pair(p4, 4));
+
+        // Check iterator equality.
+        {
+            // Returns an iterator pointing to the first element.
+            auto it1 = map.begin();
+            // Returns an iterator pointing to one PAST the last element.  This
+            // iterator is obviously conceptual only.  It cannot be
+            // dereferenced.
+            auto it2 = map.end();
+
+            it1++; // Second node now.
+            it1++; // Third node now.
+            it2--; // Fourth node now.
+            it2--; // Third node now.
+            assert(it1 == it2);
+            it2--; // Second node now.
+            it2--; // First node now.
+            assert(map.begin() == it2);
+        }
+        
+        
+        
+        
   //================================================================================
   
   
-//  //=================================check mapn < ==================================================
-//        Map<int,int>m1;
-//        Map<int,int>m2;
-//  
-//        for(int i=1; i<5;i++){
-//            m1.insert({i,i*i*i});
-//            m2.insert({i,i*i*i});
-//        }
-//        //maps are equal
-//        if(m1<m2){
-//            std::cout<<"m1<m2";
-//        }else{
-//            std::cout<<"false";
-//        }
-//        m1.insert({5,125});
-//        m2.insert({5,1000});
-//        if(m1<m2){
-//            std::cout<<"m2<m1";
-//        }else{
-//            std::cout<<"false";
-//        }
-  
-//==============================================HAPPINESS BEGINS=======================================
-//  //inserting 10 elements
-  Map<int, int> mp;
-  mp.insert(std::make_pair(2,4)); 
-  mp.insert(std::make_pair(3,9)); 
-  mp.insert(std::make_pair(4,16));
-  mp.insert(std::make_pair(5,25));
-  mp.insert(std::make_pair(6,36));
-  mp.insert(std::make_pair(7,49));
-  mp.insert(std::make_pair(8,64));
-  mp.insert(std::make_pair(9,81));
-  mp.insert(std::make_pair(10,100));
+
+////==============================================HAPPINESS BEGINS=======================================
+////  //inserting 10 elements
+//  Map<const int, int> mp;
+//  if(mp.get_header()->forward[0]==mp.get_tail()){
+//      std::cout<<"yes\n";
+//  }//constructed properly
 //  
 //  
-//
-//  
-  mp.erase(10);
-  mp.displayList();
-  mp.insert(std::make_pair(10,100));
-  mp.displayList();
-//  //================ Checking size ===================================
-//  std::cout<<"Size is:"<<mp.size()<<std::endl;
-//// 
-////  //======================= is EMPTY ======WORKING =============
+//  //mp.displayList();
+//  mp.insert(std::make_pair(2,4)); 
+//  mp.insert(std::make_pair(3,9));
+//  mp.insert(std::make_pair(4,16));
+//  mp.insert(std::make_pair(5,25));
+//  mp.insert(std::make_pair(6,36));
+//  mp.insert(std::make_pair(7,49));
+//  mp.insert(std::make_pair(8,64));
+//  mp.insert(std::make_pair(9,81));
+//  mp.insert(std::make_pair(10,100));
+//  mp.displayList();
+//  mp.erase(10);
+//  mp.displayList();
+//  mp.insert(std::make_pair(10,100));
+//  mp.displayList();
+//////  //================ Checking size ===================================
+//  std::cout<<"Size is:"<<mp.size()<<std::endl; 
+////// //======================= is EMPTY ======WORKING =============
 //  std::cout<<"is empty: "<<mp.empty()<<std::endl;// shoud give 0 as its false
 //  for(int i=2; i<11; i++){
 //      std::cout<<i;
 //      mp.erase(i);
 //  }
+////  mp.displayList();
 //  std::cout<<"is empty: "<<mp.empty()<<std::endl;// shoud give 1 as its true
-//  // mp.displayList();// should be fine
+////  // mp.displayList();// should be fine
 //  for(int i=2; i<11; i++){
 //      mp.insert(std::make_pair(i,i*i));
 //  }
 //  mp.displayList();// should be filled...
-//  
-////  //==============ITERATOR begin() and end()====================================
+////  
+//  //==============ITERATOR begin() and end()====================================
 //  // iterator by refrence so can change the mapped type
 //  auto b = mp.begin();
-//  std::cout<<"begin itr : "<<b.get_current()->value.second<<std::endl;// 4
+//  std::cout<<"begin itr : "<<b.get_current()->value->second<<std::endl;// 4
 //  b++;//3
 //  b++;//4
 //  b++;//5
-//  std::cout<<"beiin itr : "<<b.get_current()->value.second<<std::endl;// give 25
+//  std::cout<<"beiin itr : "<<b.get_current()->value->second<<std::endl;// give 25
 //  
 //  auto l = mp.end();
-//  std::cout<<"end ite : "<<l.get_current()->value.second<<std::endl;// should be 0
 //  l--;//10
 //  l--;//9
 //  l--;//8
-//  std::cout<<"end ite : "<<l.get_current()->value.second<<std::endl;// should give 64
+//  std::cout<<"end ite : "<<l.get_current()->value->second<<std::endl;// should give 64
 //  
-//// //============== ConstIterator begin and end ===========================================
-////  
-//  Map<int,int>::ConstIterator cb = mp.begin();
-//  std::cout<<"const cb : "<<cb.get_current()->value.second<<std::endl;//a t 2 op 4
+// //============== ConstIterator begin and end ===========================================
+//  
+//  Map<const int,int>::ConstIterator cb = mp.begin();
+//  std::cout<<"const cb : "<<cb.get_current()->value->second<<std::endl;//a t 2 op 4
 //  cb++;//3
 //  cb++;//4
 //  cb--;//3
-//  std::cout<<"const cb : "<<cb.get_current()->value.second<<std::endl;//9
+//  std::cout<<"const cb : "<<cb.get_current()->value->second<<std::endl;//9
 //  
 //  //should not br able to change value
-//  cb.get_current()->value.second=27;// but it did
+//  cb.get_current()->value->second=27;// but it did
 //  //change it back
-//  cb.get_current()->value.second=9;
+//  cb.get_current()->value->second=9;
 //  
-//  Map<int,int>::ConstIterator rce = mp.end(); 
-//  std::cout<<"const rcb : "<<rce.get_current()->value.second<<std::endl;//a t 0 op 0
+//  Map<const int,int>::ConstIterator rce = mp.end(); 
+//  //std::cout<<"const rcb : "<<rce.get_current()->value.second<<std::endl;//a t 0 op 0
 //  rce--;//10
-//  std::cout<<"const rcb : "<<rce.get_current()->value.second<<std::endl;//a t 0 op 0
+//  std::cout<<"const rcb : "<<rce.get_current()->value->second<<std::endl;//a 100
 //  rce--;//9
+//  std::cout<<"const rcb : "<<rce.get_current()->value->second<<std::endl;//a 100
 //  rce++;//10
-//  std::cout<<"const rcb : "<<rce.get_current()->value.second<<std::endl;// should be 100
+//  std::cout<<"const rcb : "<<rce.get_current()->value->second<<std::endl;// should be 100
 //  //should not br able to change value
-//  rce.get_current()->value.second=10*10*10;// but it did
+//  rce.get_current()->value->second=10*10*10;// but it did
 //  //change it back
-//  rce.get_current()->value.second=100;
+//  rce.get_current()->value->second=100;
 //  
-////  //========================== ReverseIterator ======================================
+//////  //========================== ReverseIterator ======================================
 //  mp.displayList();
-//  Map<int,int>::ReverseIterator rit = mp.rbegin();
-//  std::cout<<" rit : "<<rit.get_current()->value.second<<std::endl;//should be 100
+//  Map<const int,int>::ReverseIterator rit = mp.rbegin();
+//  std::cout<<" rit : "<<rit.get_current()->value->second<<std::endl;//should be 100
 //  rit++;//9
 //  rit++;//8
 //  rit--;//9
-//  std::cout<<" rit : "<<rit.get_current()->value.second<<std::endl;// give 81
+//  std::cout<<" rit : "<<rit.get_current()->value->second<<std::endl;// give 81
 //  
-//  Map<int,int>::ReverseIterator rite = mp.rend();
-//  std::cout<<" rite : "<<rite.get_current()->value.second<<std::endl;//should 0 op  0
+//  Map<const int,int>::ReverseIterator rite = mp.rend();
+//  //std::cout<<" rite : "<<rite.get_current()->value.second<<std::endl;//should 0 op  0
 //  rite--;//2
 //  rite--;//3
 //  rite++;//2
-//  std::cout<<" rite : "<<rite.get_current()->value.second<<std::endl;// give 4
+//  std::cout<<" rite : "<<rite.get_current()->value->second<<std::endl;// give 4
 //  
 ////  //=========================== find(const key_T) =======================================
 //  auto fin = mp.find(5);
-//  std::cout<<"find():"<<fin.get_current()->value.second<<std::endl;
+//  std::cout<<"find():"<<fin.get_current()->value->second<<std::endl;//25
 //  
 //  // if it indeed is an iterator
 //  fin++;
-//  std::cout<<"find():"<<fin.get_current()->value.second<<std::endl;// should give 36
+//  std::cout<<"find():"<<fin.get_current()->value->second<<std::endl;// should give 36
 //  
 //  // see if key not found then return end of iterator
 //  auto fintes = mp.find(16);
-//  std::cout<<"find() tes:"<<fintes.get_current()->value.second<<std::endl;// should give 100
+//  fintes--;
+//  std::cout<<"find() tes:"<<fintes.get_current()->value->second<<std::endl;// should give 100
 //  
-////  // ======================== find (const key_t) const ===================================
+//  // ======================== find (const key_t) const ===================================
 //  auto constfind = mp.find(6);
-//  std::cout<<" const itr find() :"<<constfind.get_current()->value.second<<std::endl;//36
+//  std::cout<<" const itr find() :"<<constfind.get_current()->value->second<<std::endl;//36
 //  
 //  constfind++;
-//  std::cout<<" const itr find() :"<<constfind.get_current()->value.second<<std::endl;//49
-//  constfind.get_current()->value.second=7*7*7;// shoudnt do
-//  constfind.get_current()->value.second=49;
+//  std::cout<<" const itr find() :"<<constfind.get_current()->value->second<<std::endl;//49
+//  constfind.get_current()->value->second=7*7*7;// shoudnt do
+//  constfind.get_current()->value->second=49;
 //  
-//  //====================== at() both function ===============================  
+////  //====================== at() both function ===============================  
 //  auto at1 = mp.at(4);
 //  auto atc = mp.at(5);
 //  std::cout<<"at1:"<<at1<<std::endl;
@@ -1261,13 +1149,13 @@ int main()
 //  std::cout<<"at1:"<<at1<<std::endl;
 //  
 //  // shoudnt happen
-//  std::cout<<"atc:"<<atc<<std::endl;
+//  std::cout<<"atc:"<<atc<<std::endl;//25
 //  atc=125;
 //  std::cout<<"atc:"<<atc<<std::endl;
 //  atc=25;
 //  std::cout<<"atc:"<<atc<<std::endl;
 //  
-////  //=============================erase both()=====================================
+//////  //=============================erase both()=====================================
 //  mp.insert(std::make_pair(11,121));
 //  mp.insert(std::make_pair(12,144));
 //  mp.erase(11);
@@ -1277,14 +1165,14 @@ int main()
 //  mp.erase(eraseit);
 //  mp.displayList();
 //  //mp.erase(12); working!!
-//  std::cout<<"erase it"<<eraseit.get_current()->value.second<<std::endl;
+//  std::cout<<"erase it"<<eraseit.get_current()->value->second<<std::endl;
 //  
-////  //====================Clear function ..easy=*************Not working
-////  //mp.clear();
-//// 
-////  //======================Not Working ================================
-////  
-////  //====================== iterators ========================
+//////  //====================Clear function ..easy=*************Not working
+//////  //mp.clear();
+////// 
+//////  //======================Not Working ================================
+//////  
+//////  //====================== iterators ========================
 //  auto cmpitr1=mp.begin();//2
 //  auto cmpitr2 = mp.begin();//2
 //  auto cmpitr3 = mp.end();//0
@@ -1331,9 +1219,9 @@ int main()
 //      std::cout<<"yes8\n";
 //  }
 //  
-////  //=======================MAp compare ===========================================
-//  Map<int,int> mymap1;
-//  Map<int,int> mymap2;
+//  //=======================MAp compare ===========================================
+//  Map<const int,int> mymap1;
+//  Map<const int,int> mymap2;
 //  
 //  for(int i=1; i<11; i++){
 //      mymap1.insert(std::make_pair(i,i*i));
@@ -1355,18 +1243,40 @@ int main()
 //      std::cout<<"Maps not equal";
 //  }
 //  
-//  // ===========================ITERATE THROUGH MAP=============================
+////  // ===========================ITERATE THROUGH MAP=============================
 //  for(auto i = mp.begin(); i!=mp.end();i++){
-//      std::cout<<i.get_current()->value.first<<"\n";
+//      std::cout<<i.get_current()->value->first<<"\n";
 //  }
 //  for(auto &e:mp){
 //      std::cout<<e.first;
 //  }
-//  ///======================================END OF HAPPINESS=======================================================
+//  
+//  //  //=================================check mapn < ==================================================
+//        Map<const int,int>m1;
+//        Map<const int,int>m2;
+//  
+//        for(int i=1; i<5;i++){
+//            m1.insert({i,i*i*i});
+//            m2.insert({i,i*i*i});
+//        }
+//        //maps are equal
+//        if(m1<m2){
+//            std::cout<<"m1<m2";
+//        }else{
+//            std::cout<<"false";
+//        }
+//        m1.insert({5,125});
+//        m2.insert({5,1000});
+//        if(m1<m2){
+//            std::cout<<"m2<m1";
+//        }else{
+//            std::cout<<"false";
+//        }
+//  
+//  //======================================END OF HAPPINESS=======================================================
   
   
   
   
-   
 }
  
