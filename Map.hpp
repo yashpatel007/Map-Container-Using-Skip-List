@@ -66,7 +66,7 @@ struct MyClass {
     friend bool operator==(const MyClass &o1, const MyClass &o2) {
         return o1.num == o2.num;
     }
-    //MyClass(double n) : num(n) {}
+    MyClass(double n) : num(n) {}
     double num;
 };
 
@@ -188,18 +188,42 @@ class Map
       }
       Node<key_T, val_T>* get_tail() const {
       return tail;}
+
+  //map ctors    
+  Map<key_T, val_T>();
+  Map<key_T, val_T>(int, float);
+  Map(const Map& map){
+      Map();
+      Node<key_T, val_T> *temp = map.get_header()->forward[0];
+      while(temp != map.get_tail()){
+            ValueType& val = *(temp->value);
+            insert(val);
+            temp = temp->forward[0];
+      }
+  }
+  
+  Map(std::initializer_list<std::pair<const key_T, val_T>> l){
+      Map();
+      auto itr = l.begin();
+      while(itr != l.end()){
+	insert(*itr);
+	itr++;
+      }
+  }
+  
+  // map destructor
 //  ~Map(){
 //        Node<key_T, val_T> *tem_header = header;
 //        Node<key_T, val_T> *temp;
 //	while(tem_header != NULL){
 //	temp = tem_header->forward[0];
-//	//delete &tem_header;
+//	delete tem_header;
 //	tem_header = temp;
 //	}
-//  }
-      
-  Map<key_T, val_T>();
-  Map<key_T, val_T>(int, float); 
+//  }  
+  
+  
+  
   int randomLevel(); 
   //Node<key_T, val_T>* createNode(const std::pair <key_T, val_T>, int); 
   
@@ -426,8 +450,8 @@ class Map
     
   };
   
-    //
-    //map coparison function
+
+//map coparison function
 bool operator==(Map<key_T, val_T>& map1){
     std::cout<<this->size()<<map1.size()<<"\n";
     if(this->size() != map1.size()) return false;
@@ -468,7 +492,38 @@ bool operator<(const Map<key_T, val_T>& map2){
 		//maps are same
 		return false;
     }
+
+val_T &operator[](const key_T & key){
+    Node<key_T, val_T> *temp = lookupkey(key);
+    if(temp== NULL){
+    Map<key_T, val_T>::Iterator itr = insert(std::make_pair(key, val_T())).first;
+    return itr.get_current()->value->second;
+    }
+    return temp->value->second;
+};
   
+Map &operator=(const Map & map){;	
+    if(this == &map){
+        return *this;
+    }
+    Node<key_T, val_T> *ret = header;
+    Node<key_T, val_T> *temp;
+    while(ret!= NULL){
+        temp = ret->forward[0];
+	delete ret;
+	ret = NULL;
+	ret = temp;
+    }
+
+    Map();
+    Node<key_T, val_T> *first = map.get_header()->forward[0];
+		if(first == map.get_tail()) return *this;
+		while(first != map.get_tail()){
+			insert(*(first->value));
+			first = first->forward[0];
+		}
+		return *this;
+}
   // iterator functions
   Iterator begin();
   Iterator end();
@@ -482,7 +537,8 @@ bool operator<(const Map<key_T, val_T>& map2){
   
   //map function for element access 
   std::pair<Iterator,bool> insert(const ValueType&);
-  
+  template <typename IT_T>
+  void insert(IT_T range_beg, IT_T range_end);
   //at function
   val_T& at(const key_T&);
   const val_T& at(const key_T&)const;
@@ -581,7 +637,7 @@ Map<key_T, val_T>::Map(int MAXLVL, float P)
   //header->forward[0]=tail;
   tail->previous = header;
   // header prev = null
-  header->previous = 0; 
+  header->previous = NULL; 
   tail->forward[0] =NULL;
 };
 
@@ -592,7 +648,7 @@ void Map<key_T, val_T>::clear(){
       if(temp != NULL){std::cout<<"yes";}
       while(temp != NULL){
         temp = temp_head->forward[0];
-	std::cout<<temp_head->value.first<<std::endl;
+	std::cout<<temp_head->value->first<<std::endl;
         delete temp_head;
         std::cout<<"deleted"<<std::endl;
         temp_head = temp;
@@ -741,6 +797,19 @@ std::pair<typename Map<key_T,val_T>::Iterator,bool> Map<key_T, val_T>::insert(co
 }; 
 
 template <typename key_T, typename val_T>
+template <typename IT_T>
+void Map<key_T, val_T>::insert(IT_T range_beg, IT_T range_end){
+		auto itr = range_beg;
+		while(itr != range_end){
+			insert(*itr);
+			++itr;
+		}
+}
+
+
+
+
+template <typename key_T, typename val_T>
  void Map<key_T, val_T>::erase(const key_T& key) 
 { 
     Node<key_T, val_T> *current = header; 
@@ -876,8 +945,6 @@ void Map<key_T, val_T>::erase(Iterator it)
 };
 
 
-
-
 // Search for element in skip list 
 template <typename key_T, typename val_T>
 typename Map<key_T, val_T>::Iterator Map<key_T, val_T>::find(const key_T& key)
@@ -892,43 +959,21 @@ typename Map<key_T, val_T>::Iterator Map<key_T, val_T>::find(const key_T& key)
 template <typename key_T, typename val_T>
 val_T& Map<key_T, val_T>::at(const key_T& key) 
 { 
-    Node<key_T, val_T> *current = header; 
-    for(int i = level; i >= 0; i--) 
-    { 
-        while(current->forward[i] && 
-        current->forward[i]->value->first < key) 
-        current = current->forward[i]; 
-    } 
-    current = current->forward[0];
-    if(current and current->value->first == key){
-      std::cout<<"Key found: ";  
-    return current->value->second;
+    Node<key_T, val_T> *temp_head = Map<key_T,val_T>::lookupkey(key);
+    if(temp_head == NULL){
+            throw std::out_of_range("out of range");
     }
-    else{
-      std::cout<<"KEY not found"<<std::endl;
-      throw  std::out_of_range("key not found");
-    } 
+    else return temp_head->value->second; 
 };
 
 template <typename key_T, typename val_T>
 const val_T& Map<key_T, val_T>::at(const key_T& key) const
 { 
-    Node<key_T, val_T> *current = header; 
-    for(int i = level; i >= 0; i--) 
-    { 
-        while(current->forward[i] && 
-        current->forward[i]->value.first < key) 
-        current = current->forward[i]; 
-    } 
-    current = current->forward[0];
-    if(current and current->value.first == key){
-      std::cout<<"Key found: ";  
-      return current->value.second;
+    Node<key_T, val_T> *temp_head = Map<key_T,val_T>::lookupkey(key);
+    if(temp_head == NULL){
+            throw std::out_of_range("out of range");
     }
-    else{
-      std::cout<<"KEY not found"<<std::endl;
-      throw  std::out_of_range("key not found");
-    } 
+    else return temp_head->value->second;  
 };
 
 // Display skip list level wise 
@@ -938,7 +983,7 @@ void Map<key_T, val_T>::displayList()
   std::cout<<"\n*****List*****"<<"\n";
   for(auto i=this->begin();i!=this->end();i++){
       std::cout<<i.get_current()->value->first<<"  ";
-  };
+  }
   std::cout<<"\n";
   std::cout<<"********************\n";
   
@@ -978,9 +1023,39 @@ int main()
 { 
   // Seed random number generator 
   srand((unsigned)time(0)); 
-  
+  {
+    Map<int, long> m;
+    m.insert({10, 10});
+    m.insert({3, 3});
+    m.insert({20, 20});
+    m.insert({15, 15});
+//    
+   std::cout<< m.at(10);
+   bool thrown = false;
+    try {
+          m.at(10000);
+    } catch (std::out_of_range) {
+        thrown = true;
+    }
+    assert(thrown); // the .at should have thrown an exception
+    
+    const auto& m_ref = m;
+    m_ref.at(10); // const .at
+    
+    auto iter = m.find(3);
+    assert((*iter).second == 3);
+    
+    auto iter2 = m.find(100000); // not in map, should give iterator to end()
+    assert(iter2 == std::end(m));
+    
+    m[30] = 30; // should default construct
+    
+    m.erase(10);
+    assert(m.find(10) == std::end(m)); // 10 shouldn't be in the map anymore
+  }
   
   //============================PROFF CODE=======================================
+  {
         Person p1("Jane");
         Person p2("John");
         Person p3("Mary");
@@ -1012,22 +1087,245 @@ int main()
             it2--; // First node now.
             assert(map.begin() == it2);
         }
-        
-        
-        
+         // Check insert return value.
+        {
+            printf("---- Test insert() return.\n");
+            // Insert returns an interator.  If it's already in, it returns an
+            // iterator to the already inserted element.
+            auto it = map.insert(std::make_pair(p1, 1));
+            assert(it.first == p1_it.first);
+            // Now insert one that is new.
+            it = map.insert(std::make_pair(Person("Larry"), 5));
+            print(*(it.first));
+            map.erase(it.first);
+        }
+
+        // Print the whole thing now, to verify ordering.
+        printf("---- Before erasures.\n");
+
+        // Iterate through the whole map, and call print() on each Person.
+        for (auto &e : map) {
+            print(e);
+        }
+
+        // Test multiple traversals of the same map.
+//        printf("---- Multiple traversals\n");
+//        traverse(map, 4);
+//
+//        // Test multiple BST at the same time.
+//        printf("---- Multiple BST\n");
+//        traverse2<MAP_T>(4);
+
+        /*
+         * Test some erasures.
+         */
+
+        // Erase first element.
+        map.erase(map.begin());
+        auto it = map.end();
+        --it; // it now points to last element.
+        it--; // it now points to penultimate element.
+        map.erase(it);
+
+        printf("---- After erasures.\n");
+
+        // Iterate through the whole map, and call print() on each Person.
+        for (auto &e : map) {
+            print(e);
+        }
+
+        // Test iterator validity.
+        {
+            // Iterators must be valid even when other things are inserted or
+            // erased.
+            printf("---- Test iterator non-invalidation\n");
+
+            // Get iterator to the first.
+            auto b = map.begin();
+
+            // Insert element which will be at the end.
+            auto it = map.insert(std::make_pair(Person("Zeke"), 10));
+
+            // Iterator to the first should still be valid.
+            print(*b);
+
+            // Delete first, saving the actual object.
+            auto tmp(*b); // Save, so we can reinsert.
+            map.erase(map.begin()); // Erase it.
+
+            // Check iterator for inserted.  Iterator to end should still be valid.
+            print(*it.first); // This should still be valid.
+
+            // Reinsert first element.
+            map.insert(tmp);
+
+            // Erase inserted last element.
+            map.erase(it.first);
+        }
+}
+    /*
+     * Test Map with MyClass.
+     */
+
+    {
+        Map<const MyClass, std::string> map;
+
+        // Empty container, should print nothing.
+        for (auto it = map.begin(); it != map.end(); ++it) {
+            abort();
+        }
+
+        MyClass m1(0), m2(3), m3(1), m4(2);
+        auto m1_it = map.insert(std::make_pair(m1, "mmm1"));
+        map.insert(std::make_pair(m2, "mmm2"));
+        map.insert(std::make_pair(m3, "mmm3"));
+        map.insert(std::make_pair(m4, "mmm4"));
+
+        // Should print 0.0 1.0 2.0 3.0
+        for (auto &e : map) {
+            printf("%3.1f ", e.first.num);
+        }
+        printf("\n");
+
+        // Check return value of insert.
+        {
+            // Already in, so must return equal to m1_it.
+            auto it = map.insert(std::make_pair(m1, "mmm1"));
+            assert(it.first == m1_it.first);
+        }
+
+        // Erase the first element.
+        map.erase(map.begin());
+        // Should print "1.0 2.0 3.0".
+        for (auto &e : map) {
+            printf("%3.1f ", e.first.num);
+        }
+        printf("\n");
+
+        // Erase the new first element.
+        map.erase(map.begin());
+        // Should print "2.0 3.0".
+        for (auto &e : map) {
+            printf("%3.1f ", e.first.num);
+        }
+        printf("\n");
+
+        map.erase(--map.end());
+        // Should print "2.0".
+        for (auto &e : map) {
+            printf("%3.1f ", e.first.num);
+        }
+        printf("\n");
+
+        // Erase the last element.
+        map.erase(map.begin());
+        // Should print nothing.
+        for (auto &e : map) {
+            printf("%3.1f ", e.first.num);
+        }
+        printf("\n");
+    }
+ /*
+     * Test Map with plain int.
+     */
+
+    {
+        Map<const int, std::string> map;
+
+        // Empty container, should print nothing.
+        for (auto &e : map) {
+            printf("%d ", e.first);
+        }
+
+        auto p1(std::make_pair(4, "444"));
+        auto p2(std::make_pair(3, "333"));
+        auto p3(std::make_pair(0, "000"));
+        auto p4(std::make_pair(2, "222"));
+        auto p5(std::make_pair(1, "111"));
+
+        map.insert(p1);
+        map.insert(p2);
+        map.insert(p3);
+        map.insert(p4);
+        map.insert(p5);
+
+        // Should print "0 1 2 3 4".
+        for (auto it = map.begin(); it != map.end(); ++it) {
+            print(*it);
+        }
+        printf("\n");
+
+        // Insert dupes.
+        map.insert(p4);
+        map.insert(p1);
+        map.insert(p3);
+        map.insert(p2);
+        map.insert(p5);
+        // Should print "0 1 2 3 4".
+        for (auto it = map.begin(); it != map.end(); ++it) {
+            print(*it);
+        }
+        printf("\n");
+
+        // Erase the first element.
+        map.erase(map.begin());
+
+        // Erase the new first element.
+        map.erase(map.begin());
+
+        // Erase the element in the end.
+        map.erase(--map.end());
+        // Should print "2 3".
+        for (auto &e : map) {
+            print(e);
+        }
+        printf("\n");
+
+        // Erase all elements.
+        map.erase(map.begin());
+        map.erase(map.begin());
+        // Should print nothing.
+        for (auto &e : map) {
+            print(e);
+        }
+        printf("\n");
+    }
+  
         
   //================================================================================
-  
+    Map<std::string, int> words_count;
+    
+    // just a big list of words
+    auto words = {"this", "is", "a", "string", "with", "words", "some",
+        "words", "in", "the", "string", "repeat", "the", "more", "they",
+        "repeat", "the", "more", "they", "should", "count", "they", "more",
+        "they", "count", "the", "more", "they", "will", "have", "their",
+        "count", "increased"};
+
+    for (auto& word : words) {
+        // this works because int can be default constructed, and the 
+        // default of int (by doing int{} ) is 0.
+        words_count[word] += 1; // add 1 to the count
+    }
+
+    // print the frequency of each word
+    std::cout << "word frequency:\n";
+    for (auto& count : words_count) { // uses .begin() and .end()
+        std::cout << count.first << ": " << count.second << '\n';
+    }
+
+    std::cout << "word frequency reversed order:\n";
+    for (auto riter = words_count.rbegin();
+            riter != words_count.rend();
+            ++riter) {
+        std::cout << (*riter).first << ": " << (*riter).second << '\n';
+    }
+//==================================================================================  
   
 
 ////==============================================HAPPINESS BEGINS=======================================
 ////  //inserting 10 elements
 //  Map<const int, int> mp;
-//  if(mp.get_header()->forward[0]==mp.get_tail()){
-//      std::cout<<"yes\n";
-//  }//constructed properly
-//  
-//  
 //  //mp.displayList();
 //  mp.insert(std::make_pair(2,4)); 
 //  mp.insert(std::make_pair(3,9));
@@ -1038,6 +1336,7 @@ int main()
 //  mp.insert(std::make_pair(8,64));
 //  mp.insert(std::make_pair(9,81));
 //  mp.insert(std::make_pair(10,100));
+//  mp[30]=30;
 //  mp.displayList();
 //  mp.erase(10);
 //  mp.displayList();
