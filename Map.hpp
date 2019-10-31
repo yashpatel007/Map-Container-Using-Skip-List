@@ -139,14 +139,16 @@ class Map
   typedef std::pair<const key_T, val_T> ValueType;
  
    
-  //const val_T& at(const key_T); 
+  //Just an extra function 
   void displayList();
   
   std::size_t size() const ;
   bool empty() const{return slsize==0;}
-  //template <typename key_T, typename val_T>
+  
+  // forward decl of classes
   class ConstIterator;
   class ReverseIterator;
+
   class Iterator{
     public:
     //watch your steps <-> constructor overloading happens here
@@ -156,11 +158,11 @@ class Map
     
     Iterator& operator=(const Iterator& itr){
         cur = itr.get_current();
-  return *this;
+        return *this;
     }
     
     Iterator& operator++(){
-  if(cur == NULL) {
+      if(cur == NULL) {
               return *this;
             }
             cur = cur->forward[0];
@@ -168,45 +170,45 @@ class Map
     }
 
     Iterator operator++(int){
-  Map<key_T, val_T>::Iterator ret = *this;
-  if(cur == NULL) return *this;
-        cur = cur->forward[0];
-  return ret;
-    }
-    Iterator& operator--(){
-  if(cur == NULL) return *this;
-  cur = cur->previous;
-  return *this;
-    }
-    Iterator operator--(int){
+      Map<key_T, val_T>::Iterator ret = *this;
+      if(cur == NULL) return *this;
+          cur = cur->forward[0];
+          return ret;
+      }
+      Iterator& operator--(){
+      if(cur == NULL) return *this;
+      cur = cur->previous;
+      return *this;
+  }
+  Iterator operator--(int){
   Map<key_T, val_T>::Iterator retrn = *this;
   if(cur == NULL) return *this;
         cur = cur->previous;
-  return retrn;
-    }
+        return retrn;
+  }
     
-    ValueType& operator*() const{
-        return *cur->value;
-    }
-    ValueType* operator->() const{
-  return cur->value;
-    }
+  ValueType& operator*() const{
+      return *cur->value;
+  }
+  ValueType* operator->() const{
+      return cur->value;
+  }
     
-    bool operator==(const typename Map<key_T,val_T>::Iterator& itr1){
+  bool operator==(const typename Map<key_T,val_T>::Iterator& itr1){
     return (this->get_current() == itr1.get_current())? true : false;
-    }
-    bool operator!=(const Iterator& itr1){
+  }
+  bool operator!=(const Iterator& itr1){
     return (this->get_current() != itr1.get_current())? true : false;
-    }
+  }
     
-    bool operator==(const typename Map<key_T,val_T>::ReverseIterator& itr1){
+  bool operator==(const typename Map<key_T,val_T>::ReverseIterator& itr1){
     return (this->get_current() == itr1.get_current())? true : false;
-    }
+  }
    
     
-    bool operator==(const typename Map<key_T,val_T>::ConstIterator& itr1){
+  bool operator==(const typename Map<key_T,val_T>::ConstIterator& itr1){
     return (this->get_current() == itr1.get_current())? true : false;
-    }
+  }
 //   bool operator!=(const Map<key_T,val_T>::ConstIterator& itr1){
 //    return (this->get_current() != itr1.get_current())? true : false;
 //    }
@@ -256,7 +258,7 @@ class Map
     return ret;
     }
     ValueType& operator*() const{
-  return *cur->value;
+    return *cur->value;
     }
     ValueType* operator->() const{
     return cur->value;
@@ -359,7 +361,7 @@ class Map
   };
   
 
-//map coparison function
+//map coparison functions
 bool operator==(Map<key_T, val_T>& map1){
     std::cout<<this->size()<<map1.size()<<"\n";
     if(this->size() != map1.size()) return false;
@@ -368,7 +370,7 @@ bool operator==(Map<key_T, val_T>& map1){
   while(itr1 != this->end() && itr2 != map1.end()){
             std::cout<<itr1.get_current()->value->first<<itr2.get_current()->value->first<<"\n";
             if(*itr1 != *itr2){
-                std::cout<<" i am here in if in map containor\n";
+                //std::cout<<" i am here in if in map containor\n";
                 return false;
             }
             ++itr1;
@@ -465,6 +467,7 @@ Map &operator=(const Map<key_T,val_T> & map){;
   std::pair<Iterator,bool> insert(const ValueType&);
   template <typename IT_T>
   void insert(IT_T range_beg, IT_T range_end);
+
   //at function
   val_T& at(const key_T&);
   const val_T& at(const key_T&)const;
@@ -475,18 +478,20 @@ Map &operator=(const Map<key_T,val_T> & map){;
   
   //clear
   void clear();
-   //find
+
+  //find
   Iterator find(const key_T&);
   ConstIterator find(const key_T& key) const{
     Node<key_T, val_T> *temp = lookupkey(key);
     if(temp == NULL){
-  return Map<key_T, val_T>::ConstIterator(tail);
+    return Map<key_T, val_T>::ConstIterator(tail);
     }
     return Map<key_T, val_T>::ConstIterator(temp);
   };// find ends
 
   Node<key_T, val_T>* lookupkey(const key_T& key) const{
-      Node<key_T, val_T> *current = header; 
+      
+    Node<key_T, val_T> *current = header; 
   
     for(int i = level; i >= 1; i--) 
     { 
@@ -574,15 +579,15 @@ void Map<key_T, val_T>::clear(){
       if(temp != NULL){std::cout<<"yes";}
       while(temp != NULL){
         temp = temp_head->forward[0];
-  std::cout<<temp_head->value->first<<std::endl;
+        //std::cout<<temp_head->value->first<<std::endl;
         delete temp_head;
-        std::cout<<"deleted"<<std::endl;
+        //std::cout<<"deleted"<<std::endl;
         temp_head = temp;
   }
     slsize=0;
     header=NULL;
-                tail = NULL;
-                Map();
+    tail = NULL;
+    Map();
     
 }
 
@@ -624,14 +629,14 @@ int Map<key_T, val_T>::randomLevel()
   return lvl; 
 }
 
-// create new node 
+// create new node========================================================// 
 //template <typename key_T, typename val_T>
 //Node<key_T, val_T>* Map<key_T, val_T>::createNode(const std::pair <key_T, val_T> p,int level) 
 //{ 
 //  //cout<<"node created with"<<p.first<<"and lev:"<<level<<endl;
 //  Node<key_T, val_T> *n = new Node<key_T, val_T>(p,level); 
 //  return n; 
-//}; 
+//}; ================================================================//
 
 // Insert given key in skip list 
 template <typename key_T, typename val_T>
@@ -639,7 +644,7 @@ std::pair<typename Map<key_T,val_T>::Iterator,bool> Map<key_T, val_T>::insert(co
 { 
     const key_T& key=p.first;
   
-  // pair<Iterator,bool>
+  
   // make temp uiterator as Iterator temp = Iterator(n<-newly created node); and return the pointer
   Node<key_T, val_T> *current = header; 
 
@@ -671,7 +676,7 @@ std::pair<typename Map<key_T,val_T>::Iterator,bool> Map<key_T, val_T>::insert(co
     //current = current->forward[0];
     if(n->value != NULL && (n->value->first == p.first)){
     Map<key_T,val_T>::Iterator retit = Iterator(n);
-    std::cout<<"key already there"<<std::endl;
+    //std::cout<<"key already there"<<std::endl;
     return std::make_pair(retit, false);
     }else{ 
     // Generate a random level for node 
@@ -707,17 +712,17 @@ std::pair<typename Map<key_T,val_T>::Iterator,bool> Map<key_T, val_T>::insert(co
     //std::cout<< n->previous->value.first<<std::endl;
     
         if(!(n->forward[0] == tail)){
-            std::cout<<"inif";
-  n->forward[0]->previous = n;
-  }
-  else{
+            //std::cout<<"inif";
+            n->forward[0]->previous = n;
+        }
+        else{
             tail->previous = n;
-  } 
+        } 
     
-    std::cout << "Successfully Inserted key\n";
-    this->slsize++; 
-    Iterator retit = Iterator(n);
-    return std::make_pair(retit, true);
+        //std::cout << "Inserted key\n";
+        this->slsize++; 
+        Iterator retit = Iterator(n);
+        return std::make_pair(retit, true);
     } 
 
 } 
@@ -817,7 +822,7 @@ template <typename key_T, typename val_T>
         while(level>0 && 
               header->forward[level] == NULL) 
             level--; 
-         std::cout<<"Successfully deleted key\n";
+         //std::cout<<"deleted key\n";
          delete[] update;//*********************************************
          slsize--;
          
@@ -844,14 +849,14 @@ void Map<key_T, val_T>::erase(Iterator it)
     } 
     
     while(current->forward[0] != tail && current->forward[0]->value->first < key){    
-  current = current->forward[0];
+        current = current->forward[0];
     }
     
     
-        update[0] = current;
-        Node<key_T, val_T> *n = update[0];
-        n = n->forward[0];
-        //current = current->forward[0]; 
+    update[0] = current;
+    Node<key_T, val_T> *n = update[0];
+    n = n->forward[0];
+    //current = current->forward[0]; 
   
     // If current node is target node 
     if(n->value->first == key) 
@@ -865,18 +870,16 @@ void Map<key_T, val_T>::erase(Iterator it)
   
             update[i]->forward[i] = n->forward[i]; 
         } 
-       // displayList();
+        // displayList();
         
         //======================================
          if(!(n->forward[0] == tail)){
             n->forward[0]->previous = n->previous;
-        }
-        else{
-            tail->previous = n->previous;
-            
-            n->previous->forward[0] = tail;
-            
-            }
+          }
+          else{
+              tail->previous = n->previous;
+              n->previous->forward[0] = tail;
+          }
         //delete n;//****************************************************SF
         //======================================
   
@@ -885,7 +888,7 @@ void Map<key_T, val_T>::erase(Iterator it)
         while(level>0 && 
               header->forward[level] == NULL) 
             level--; 
-         std::cout<<"Successfully deleted key\n";
+         //std::cout<<"deleted key\n";
          delete[] update;
          slsize--;
          
@@ -928,7 +931,7 @@ const val_T& Map<key_T, val_T>::at(const key_T& key) const
 // Display skip list level wise 
 template <typename key_T, typename val_T>
 void Map<key_T, val_T>::displayList() 
-{ 
+{ // basically iterating over the map
   std::cout<<"\n*****List*****"<<"\n";
   for(auto i=this->begin();i!=this->end();i++){
       std::cout<<i.get_current()->value->first<<"  ";
