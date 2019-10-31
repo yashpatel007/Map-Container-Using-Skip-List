@@ -30,7 +30,7 @@ public:
   ~Node(){
   delete [] forward;
   delete value;
-  delete previous;
+  //delete previous;// i guess its deleating twice!!
   }
   
 }; 
@@ -121,13 +121,13 @@ class Map
   
   // map destructor
  ~Map(){
-    // Node<key_T, val_T> *tem_header = header;
-    // Node<key_T, val_T> *temp;
-    // while(tem_header != NULL){
-    // temp = tem_header->forward[0];
-    // delete tem_header;
-    // tem_header = temp;
-    // }
+    Node<key_T, val_T> *tem_header = header;
+    Node<key_T, val_T> *temp;
+    while(tem_header != NULL){
+    temp = tem_header->forward[0];
+    delete tem_header;
+    tem_header = temp;
+    }
  }  
   
   
@@ -419,7 +419,8 @@ Map &operator=(const Map<key_T,val_T> & map){;
     Node<key_T, val_T> *ret = header;
     Node<key_T, val_T> *temp;
     while(ret!= NULL){
-        temp = ret->forward[0];
+    temp = ret->forward[0];
+    delete ret;//****************************************************************
     ret = NULL;
     ret = temp;
   }
@@ -643,8 +644,6 @@ template <typename key_T, typename val_T>
 std::pair<typename Map<key_T,val_T>::Iterator,bool> Map<key_T, val_T>::insert(const std::pair<const key_T, val_T>& p) 
 { 
     const key_T& key=p.first;
-  
-  
   // make temp uiterator as Iterator temp = Iterator(n<-newly created node); and return the pointer
   Node<key_T, val_T> *current = header; 
 
@@ -677,6 +676,7 @@ std::pair<typename Map<key_T,val_T>::Iterator,bool> Map<key_T, val_T>::insert(co
     if(n->value != NULL && (n->value->first == p.first)){
     Map<key_T,val_T>::Iterator retit = Iterator(n);
     //std::cout<<"key already there"<<std::endl;
+    delete[] update;//************************************************************************
     return std::make_pair(retit, false);
     }else{ 
     // Generate a random level for node 
@@ -721,6 +721,7 @@ std::pair<typename Map<key_T,val_T>::Iterator,bool> Map<key_T, val_T>::insert(co
     
         //std::cout << "Inserted key\n";
         this->slsize++; 
+        delete[] update;
         Iterator retit = Iterator(n);
         return std::make_pair(retit, true);
     } 
@@ -815,10 +816,9 @@ template <typename key_T, typename val_T>
             n->previous->forward[0] = tail;
             
             }
-        //======================================
-  
-   
-     // Remove levels having no elements  
+        //====================================== 
+     // Remove levels having no elements
+     delete n;//********************************************************  
         while(level>0 && 
               header->forward[level] == NULL) 
             level--; 
@@ -880,7 +880,7 @@ void Map<key_T, val_T>::erase(Iterator it)
               tail->previous = n->previous;
               n->previous->forward[0] = tail;
           }
-        //delete n;//****************************************************SF
+        delete n;//****************************************************SF
         //======================================
   
    
@@ -889,7 +889,7 @@ void Map<key_T, val_T>::erase(Iterator it)
               header->forward[level] == NULL) 
             level--; 
          //std::cout<<"deleted key\n";
-         delete[] update;
+         delete[] update;//***************************************************
          slsize--;
          
     }else{
