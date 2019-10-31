@@ -25,3 +25,5 @@ This is an implementation of std::Map container using SKIP LIST
      Compile it the same way as explained above.
     
     
+<b>Completion status:</b>
+     Every test case is compiling with zero errors and no memory leaks when checked usuing valgrind. There are a few warnings but in            testcode
