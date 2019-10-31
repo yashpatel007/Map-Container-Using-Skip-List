@@ -362,26 +362,29 @@ class Map
   
 
 //map coparison functions
-bool operator==(Map<key_T, val_T>& map1){
-    std::cout<<this->size()<<map1.size()<<"\n";
-    if(this->size() != map1.size()) return false;
-  auto itr1 = this->begin();
-        auto itr2 = map1.begin();
-  while(itr1 != this->end() && itr2 != map1.end()){
-            std::cout<<itr1.get_current()->value->first<<itr2.get_current()->value->first<<"\n";
-            if(*itr1 != *itr2){
-                //std::cout<<" i am here in if in map containor\n";
-                return false;
-            }
-            ++itr1;
-            ++itr2;
-            }
-            return true;
-}
+// bool operator==(const Map<key_T, val_T>& map1){
+//     //std::cout<<this->size()<<map1.size()<<"\n";
+//     if(this->size() != map1.size()) return false;
+//   auto itr1 = this->begin();
+//         auto itr2 = map1.begin();
+//   while(itr1 != this->end() && itr2 != map1.end()){
+//             //std::cout<<itr1.get_current()->value->first<<itr2.get_current()->value->first<<"\n";
+//             if(*itr1 != *itr2){
+//                 //std::cout<<" i am here in if in map containor\n";
+//                 return false;
+//             }
+//             ++itr1;
+//             ++itr2;
+//             }
+//             return true;
+// }
 
-bool operator!=(const Map<key_T, val_T>& map1){
-  return !(this == map1);
-}
+// gonna decl as free standing function now
+// bool operator!=(const Map<key_T, val_T>& map1){
+//   return !(this == map1);
+// }
+
+bool operator!=(const Map<key_T, val_T>&) const;
 
 bool operator<(const Map<key_T, val_T>& map2){
     size_t size1 = this->size();
@@ -556,8 +559,8 @@ Map<key_T, val_T>::Map(int MAXLVL, float P)
   this->MAXLVL = MAXLVL; 
   this->P = P; 
   level = 0; 
-  key_T k;// null init key in header
-  val_T v;//no init value in header
+  //key_T k;// null init key in header
+  //val_T v;//no init value in header
   //size --added
   slsize=0;
   // create header node  
@@ -577,7 +580,7 @@ template <typename key_T, typename val_T>
 void Map<key_T, val_T>::clear(){
       Node<key_T, val_T> *temp_head = header;
       Node<key_T, val_T> *temp;
-      if(temp != NULL){std::cout<<"yes";}
+      //if(temp != NULL){std::cout<<"yes";}
       while(temp != NULL){
         temp = temp_head->forward[0];
         //std::cout<<temp_head->value->first<<std::endl;
@@ -591,6 +594,34 @@ void Map<key_T, val_T>::clear(){
     Map();
     
 }
+
+template <typename key_T, typename val_T>
+bool operator==(const Map<key_T, val_T>& map1,const Map<key_T, val_T>& map2){
+    //std::cout<<this->size()<<map1.size()<<"\n";
+    if(map1.size() != map2.size()) return false;
+  auto itr1 = map1.begin();
+        auto itr2 = map2.begin();
+  while(itr1 != map1.end() && itr2 != map2.end()){
+            //std::cout<<itr1.get_current()->value->first<<itr2.get_current()->value->first<<"\n";
+            if(*itr1 != *itr2){
+                //std::cout<<" i am here in if in map containor\n";
+                return false;
+            }
+            ++itr1;
+            ++itr2;
+            }
+            return true;
+}
+
+template <typename key_T, typename val_T>
+  bool Map<key_T, val_T>::operator!=(const Map<key_T, val_T>& map) const{
+    if(*this == map) return false;
+    return true;
+}
+template <typename key_T, typename val_T>
+  bool operator!=(const Map<key_T, val_T>& map1, const Map<key_T, val_T>& map2){
+    return !(map1 == map2);
+  }
 
 template <typename key_T, typename val_T>
 typename Map<key_T, val_T>::Iterator Map<key_T, val_T>::begin(){
@@ -932,12 +963,12 @@ const val_T& Map<key_T, val_T>::at(const key_T& key) const
 template <typename key_T, typename val_T>
 void Map<key_T, val_T>::displayList() 
 { // basically iterating over the map
-  std::cout<<"\n*****List*****"<<"\n";
-  for(auto i=this->begin();i!=this->end();i++){
-      std::cout<<i.get_current()->value->first<<"  ";
-  }
-  std::cout<<"\n";
-  std::cout<<"********************\n";
+  // std::cout<<"\n*****List*****"<<"\n";
+  // for(auto i=this->begin();i!=this->end();i++){
+  //     //std::cout<<i.get_current()->value->first<<"  ";
+  // }
+  // std::cout<<"\n";
+  // std::cout<<"********************\n";
   
 }
 
