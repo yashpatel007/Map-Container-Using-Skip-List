@@ -1,6 +1,4 @@
 # map-container-yashpatel007
-map-container-yashpatel007 created by GitHub Classroom
-
 
 <b>Implementation:</b>
 This is an implementation of std::Map container using SKIP LIST
